@@ -14,35 +14,41 @@ export default class Synth extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const noteDuration = barDuration / this._notes.length;
+    const noteDuration = barDuration / this._cycle.length;
 
     this._types.forEach((type) => {
-      this._notes.forEach((midiNote, nI) => {
-        if (!midiNote) return;
+      this._cycle.forEach((midiChord, chordIndex) => {
+        midiChord?.forEach((midiNote) => {
+          if (!midiNote) return;
 
-        const osc = new OscillatorNode(this._ctx, {
-          frequency: midiToFrequency(midiNote),
-          type,
-          detune: this._detune,
+          const osc = new OscillatorNode(this._ctx, {
+            frequency: midiToFrequency(midiNote),
+            type,
+            detune: this._detune,
+          });
+          this._audioNodes.add(osc);
+
+          const gainNode = new GainNode(this._ctx);
+          this._gainNodes.add(gainNode);
+
+          const noteStart = barStart + chordIndex * noteDuration;
+          const endTime = this.applyAdsr(
+            gainNode.gain,
+            noteStart,
+            noteDuration
+          );
+          this.applyLFOs(this);
+
+          osc.connect(gainNode).connect(this.connectChain());
+          osc.start(noteStart);
+          osc.stop(noteStart + endTime);
+          osc.onended = () => {
+            osc.disconnect();
+            this._audioNodes.delete(osc);
+            gainNode.disconnect();
+            this._gainNodes.delete(gainNode);
+          };
         });
-        this._audioNodes.add(osc);
-
-        const gainNode = new GainNode(this._ctx);
-        this._gainNodes.add(gainNode);
-
-        const noteStart = barStart + nI * noteDuration;
-        const endTime = this.applyAdsr(gainNode.gain, noteStart, noteDuration);
-        this.applyLFOs(this);
-
-        osc.connect(gainNode).connect(this.connectChain());
-        osc.start(noteStart);
-        osc.stop(noteStart + endTime);
-        osc.onended = () => {
-          osc.disconnect();
-          this._audioNodes.delete(osc);
-          gainNode.disconnect();
-          this._gainNodes.delete(gainNode);
-        };
       });
     });
   }

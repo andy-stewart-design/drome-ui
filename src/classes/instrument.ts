@@ -5,9 +5,12 @@ import type Sample from "./sample";
 import type Synth from "./synth";
 
 const filterTypes = ["bandpass", "highpass", "lowpass"] as const;
+type Nullable<T> = T | null | undefined;
 type InstrumentType = "synth" | "sample";
 type FilterType = (typeof filterTypes)[number];
 type LfoableParam = "detune" | FilterType;
+type Chord<T> = Nullable<T>[];
+type Cycle<T> = Nullable<Chord<T>>[];
 
 interface InstrumentOptions {
   destination: AudioNode;
@@ -20,7 +23,7 @@ abstract class Instrument<T> {
   protected _destination: AudioNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
-  protected _notes: (T | null | undefined)[];
+  protected _cycle: Cycle<T>;
   protected _gain: number;
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
@@ -32,7 +35,7 @@ abstract class Instrument<T> {
     this._ctx = ctx;
     this._audioNodes = new Set();
     this._gainNodes = new Set();
-    this._notes = [];
+    this._cycle = [];
     this._destination = opts.destination;
     this._gain = opts.gain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
@@ -87,8 +90,8 @@ abstract class Instrument<T> {
     return this._destination;
   }
 
-  note(...notes: (T | null | undefined)[]) {
-    this._notes = notes;
+  note(...notes: Chord<T> | Cycle<T>) {
+    this._cycle = notes.map((v) => (Array.isArray(v) ? v : [v]));
     return this;
   }
 

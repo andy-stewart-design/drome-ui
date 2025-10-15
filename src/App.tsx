@@ -1,12 +1,7 @@
 import Drome from "./classes/drome";
 
 const d = new Drome();
-const sweepInst = d
-  .synth()
-  .att(0.5)
-  .rel(0.5)
-  .adsrMode("clip")
-  .note(69, 0, 73, 0);
+const sweepInst = d.synth("triangle").lpf(1200).note(69, 73, 76, 80);
 
 function App() {
   return (
