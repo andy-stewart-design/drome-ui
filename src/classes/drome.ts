@@ -28,6 +28,14 @@ class Drome {
   get ctx() {
     return this._clock.ctx;
   }
+
+  get currentTime() {
+    return this.ctx.currentTime;
+  }
+
+  get barDuration() {
+    return this._clock.barDuration;
+  }
 }
 
 export default Drome;

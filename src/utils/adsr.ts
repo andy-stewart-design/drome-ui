@@ -17,7 +17,7 @@ interface getAdsrTimesArgs {
   a: number;
   d: number;
   r: number;
-  stepLength: number;
+  duration: number;
   mode: AdsrMode;
 }
 
@@ -29,17 +29,17 @@ interface applyAdsrArgs {
   envTimes: AdsrTimes;
 }
 
-function getAdsrTimes({ a, d, r, stepLength, mode }: getAdsrTimesArgs) {
+function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
   if (mode === "clip") {
     const adsrSum = a + d + r;
     const nA = adsrSum > 1 ? a / adsrSum : a;
     const nD = adsrSum > 1 ? d / adsrSum : d;
     const nR = adsrSum > 1 ? r / adsrSum : r;
 
-    const att = nA * stepLength;
-    const dec = att + nD * stepLength;
-    const rStart = stepLength - nR * stepLength;
-    const rEnd = stepLength;
+    const att = nA * duration;
+    const dec = att + nD * duration;
+    const rStart = duration - nR * duration;
+    const rEnd = duration;
 
     return { a: att, d: dec, r: { start: rStart, end: rEnd } };
   } else if (mode === "fit") {
@@ -47,10 +47,10 @@ function getAdsrTimes({ a, d, r, stepLength, mode }: getAdsrTimesArgs) {
     const nA = adsrSum > 1 ? a / adsrSum : a;
     const nD = adsrSum > 1 ? d / adsrSum : d;
 
-    const att = nA * stepLength;
-    const dec = att + nD * stepLength;
-    const rStart = stepLength;
-    const rEnd = stepLength + r * stepLength;
+    const att = nA * duration;
+    const dec = att + nD * duration;
+    const rStart = duration;
+    const rEnd = duration + r * duration;
 
     return { a: att, d: dec, r: { start: rStart, end: rEnd } };
   } else {

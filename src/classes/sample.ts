@@ -82,7 +82,7 @@ export default class Sample extends Instrument<number> {
       a: this._adsr.a,
       d: this._adsr.d,
       r: this._adsr.r,
-      stepLength: effectiveDuration,
+      duration: effectiveDuration,
       mode: this._adsrMode,
     });
 

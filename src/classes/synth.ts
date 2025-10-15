@@ -17,11 +17,11 @@ export default class Synth extends Instrument<number> {
     const noteDuration = barDuration / this._notes.length;
 
     this._types.forEach((type) => {
-      this._notes.forEach((note, nI) => {
-        const noteStart = barStart + nI * noteDuration;
+      this._notes.forEach((midiNote, nI) => {
+        if (!midiNote) return;
 
         const osc = new OscillatorNode(this._ctx, {
-          frequency: midiToFrequency(note),
+          frequency: midiToFrequency(midiNote),
           type,
           detune: this._detune,
         });
@@ -30,6 +30,7 @@ export default class Synth extends Instrument<number> {
         const gainNode = new GainNode(this._ctx);
         this._gainNodes.add(gainNode);
 
+        const noteStart = barStart + nI * noteDuration;
         const endTime = this.applyAdsr(gainNode.gain, noteStart, noteDuration);
         this.applyLFOs(this);
 

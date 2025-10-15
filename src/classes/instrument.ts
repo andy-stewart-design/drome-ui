@@ -20,7 +20,7 @@ abstract class Instrument<T> {
   protected _destination: AudioNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
-  protected _notes: T[];
+  protected _notes: (T | null | undefined)[];
   protected _gain: number;
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
@@ -45,7 +45,7 @@ abstract class Instrument<T> {
       a: this._adsr.a,
       d: this._adsr.d,
       r: this._adsr.r,
-      stepLength: dur,
+      duration: dur,
       mode: this._adsrMode,
     });
 
@@ -87,7 +87,7 @@ abstract class Instrument<T> {
     return this._destination;
   }
 
-  note(...notes: T[]) {
+  note(...notes: (T | null | undefined)[]) {
     this._notes = notes;
     return this;
   }
