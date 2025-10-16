@@ -1,0 +1,51 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "RolandTR626/rolandtr626-bd/Bassdrum-01.wav",
+      "RolandTR626/rolandtr626-bd/Bassdrum-02.wav"
+    ],
+    "cb": ["RolandTR626/rolandtr626-cb/Cowbell.wav"],
+    "cp": ["RolandTR626/rolandtr626-cp/Clap.wav"],
+    "cr": [
+      "RolandTR626/rolandtr626-cr/Crash.wav",
+      "RolandTR626/rolandtr626-cr/zChina.wav"
+    ],
+    "hh": ["RolandTR626/rolandtr626-hh/Hat Closed.wav"],
+    "ht": [
+      "RolandTR626/rolandtr626-ht/Tom H-01.wav",
+      "RolandTR626/rolandtr626-ht/Tom H-02.wav"
+    ],
+    "lt": [
+      "RolandTR626/rolandtr626-lt/Tom L-01.wav",
+      "RolandTR626/rolandtr626-lt/Tom L-02.wav"
+    ],
+    "mt": [
+      "RolandTR626/rolandtr626-mt/Tom M-01.wav",
+      "RolandTR626/rolandtr626-mt/Tom M-02.wav"
+    ],
+    "oh": ["RolandTR626/rolandtr626-oh/Hat Open.wav"],
+    "perc": [
+      "RolandTR626/rolandtr626-perc/Agogo H.wav",
+      "RolandTR626/rolandtr626-perc/Agogo L.wav",
+      "RolandTR626/rolandtr626-perc/Clave.wav",
+      "RolandTR626/rolandtr626-perc/Conga H.wav",
+      "RolandTR626/rolandtr626-perc/Conga L.wav",
+      "RolandTR626/rolandtr626-perc/Conga M.wav",
+      "RolandTR626/rolandtr626-perc/Timbale H.wav",
+      "RolandTR626/rolandtr626-perc/Timbale L.wav"
+    ],
+    "rd": [
+      "RolandTR626/rolandtr626-rd/Ride-01.wav",
+      "RolandTR626/rolandtr626-rd/Ride-02.wav"
+    ],
+    "rim": ["RolandTR626/rolandtr626-rim/Rimshot.wav"],
+    "sd": [
+      "RolandTR626/rolandtr626-sd/Snaredrum-01.wav",
+      "RolandTR626/rolandtr626-sd/Snaredrum-02.wav",
+      "RolandTR626/rolandtr626-sd/Snaredrum-03.wav"
+    ],
+    "sh": ["RolandTR626/rolandtr626-sh/Shaker.wav"],
+    "tb": ["RolandTR626/rolandtr626-tb/Tambourine.wav"]
+  }
+}

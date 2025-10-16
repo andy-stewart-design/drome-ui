@@ -1,0 +1,13 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "DoepferMS404/doepferms404-bd/0Bassdrum.wav",
+      "DoepferMS404/doepferms404-bd/Bassdrum Reverse.wav"
+    ],
+    "hh": ["DoepferMS404/doepferms404-hh/Hat Closed.wav"],
+    "lt": ["DoepferMS404/doepferms404-lt/Tom.wav"],
+    "oh": ["DoepferMS404/doepferms404-oh/Hat Open.wav"],
+    "sd": ["DoepferMS404/doepferms404-sd/Snaredrum.wav"]
+  }
+}

@@ -1,0 +1,37 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": ["Linn9000/linn9000-bd/BAssdrum.wav"],
+    "cb": [
+      "Linn9000/linn9000-cb/Cowbell-01.wav",
+      "Linn9000/linn9000-cb/Cowbell-02.wav"
+    ],
+    "cr": [
+      "Linn9000/linn9000-cr/Crash-01.wav",
+      "Linn9000/linn9000-cr/Crash-02.wav"
+    ],
+    "hh": ["Linn9000/linn9000-hh/Hat Closed.wav"],
+    "ht": [
+      "Linn9000/linn9000-ht/Tom-01.wav",
+      "Linn9000/linn9000-ht/Tom-02.wav"
+    ],
+    "lt": [
+      "Linn9000/linn9000-lt/Tom-04.wav",
+      "Linn9000/linn9000-lt/Tom-05.wav"
+    ],
+    "mt": ["Linn9000/linn9000-mt/Tom-03.wav"],
+    "oh": ["Linn9000/linn9000-oh/Hat Open.wav"],
+    "perc": [
+      "Linn9000/linn9000-perc/Conga H.wav",
+      "Linn9000/linn9000-perc/Conga L.wav",
+      "Linn9000/linn9000-perc/Conga M.wav"
+    ],
+    "rd": [
+      "Linn9000/linn9000-rd/Crash-03.wav",
+      "Linn9000/linn9000-rd/Ping.wav"
+    ],
+    "rim": ["Linn9000/linn9000-rim/Rim Shot.wav"],
+    "sd": ["Linn9000/linn9000-sd/0Snaredrum.wav"],
+    "tb": ["Linn9000/linn9000-tb/Tambourine.wav"]
+  }
+}

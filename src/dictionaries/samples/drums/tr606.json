@@ -1,0 +1,12 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": ["RolandTR606/rolandtr606-bd/Bassdrum.wav"],
+    "cr": ["RolandTR606/rolandtr606-cr/Cymbal.wav"],
+    "hh": ["RolandTR606/rolandtr606-hh/Hat Closed.wav"],
+    "ht": ["RolandTR606/rolandtr606-ht/Tom H.wav"],
+    "lt": ["RolandTR606/rolandtr606-lt/Tom L.wav"],
+    "oh": ["RolandTR606/rolandtr606-oh/Hat Open.wav"],
+    "sd": ["RolandTR606/rolandtr606-sd/Snaredrum.wav"]
+  }
+}

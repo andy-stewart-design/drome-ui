@@ -1,0 +1,31 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "misc": [
+      "OberheimDMX/oberheimdmx--perc/Timbale H.wav",
+      "OberheimDMX/oberheimdmx--perc/Timbale L.wav",
+      "OberheimDMX/oberheimdmx--perc/Timbale M.wav"
+    ],
+    "bd": [
+      "OberheimDMX/oberheimdmx-bd/Bassdrum-01.wav",
+      "OberheimDMX/oberheimdmx-bd/Bassdrum-02.wav",
+      "OberheimDMX/oberheimdmx-bd/Bassdrum-03.wav"
+    ],
+    "cp": ["OberheimDMX/oberheimdmx-cp/Clap.wav"],
+    "cr": ["OberheimDMX/oberheimdmx-cr/Crash.wav"],
+    "hh": ["OberheimDMX/oberheimdmx-hh/Hat Closed.wav"],
+    "ht": ["OberheimDMX/oberheimdmx-ht/Tom H.wav"],
+    "lt": ["OberheimDMX/oberheimdmx-lt/Tom L.wav"],
+    "mt": ["OberheimDMX/oberheimdmx-mt/Tom M.wav"],
+    "oh": ["OberheimDMX/oberheimdmx-oh/Hat Open.wav"],
+    "rd": ["OberheimDMX/oberheimdmx-rd/Ride.wav"],
+    "rim": ["OberheimDMX/oberheimdmx-rim/Rim Shot.wav"],
+    "sd": [
+      "OberheimDMX/oberheimdmx-sd/Snaredrum-01.wav",
+      "OberheimDMX/oberheimdmx-sd/Snaredrum-02.wav",
+      "OberheimDMX/oberheimdmx-sd/Snaredrum-03.wav"
+    ],
+    "sh": ["OberheimDMX/oberheimdmx-sh/Cabasa.wav"],
+    "tb": ["OberheimDMX/oberheimdmx-tb/Tamborine.wav"]
+  }
+}

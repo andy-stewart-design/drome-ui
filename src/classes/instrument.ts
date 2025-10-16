@@ -3,6 +3,7 @@ import LFO from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Sample from "./sample";
 import type Synth from "./synth";
+import type Drome from "./drome";
 
 const filterTypes = ["bandpass", "highpass", "lowpass"] as const;
 type Nullable<T> = T | null | undefined;
@@ -12,14 +13,15 @@ type LfoableParam = "detune" | FilterType;
 type Chord<T> = Nullable<T>[];
 type Cycle<T> = Nullable<Chord<T>>[];
 
-interface InstrumentOptions {
+interface InstrumentOptions<T> {
   destination: AudioNode;
+  defaultCycle?: Cycle<T>;
   gain?: number;
   adsr?: AdsrEnvelope;
 }
 
 abstract class Instrument<T> {
-  protected _ctx: AudioContext;
+  protected _drome: Drome;
   protected _destination: AudioNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
@@ -31,11 +33,11 @@ abstract class Instrument<T> {
   protected _filterMap: Map<BiquadFilterType, BiquadFilterNode>;
   protected _lfoMap: Map<LfoableParam, LFO>;
 
-  constructor(ctx: AudioContext, opts: InstrumentOptions) {
-    this._ctx = ctx;
+  constructor(drome: Drome, opts: InstrumentOptions<T>) {
+    this._drome = drome;
     this._audioNodes = new Set();
     this._gainNodes = new Set();
-    this._cycle = [];
+    this._cycle = opts.defaultCycle || [];
     this._destination = opts.destination;
     this._gain = opts.gain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
@@ -132,7 +134,7 @@ abstract class Instrument<T> {
     const type = "bandpass";
     this._filterMap.set(
       type,
-      new BiquadFilterNode(this._ctx, { type, frequency })
+      new BiquadFilterNode(this.ctx, { type, frequency })
     );
     if (lfo) this._lfoMap.set(type, lfo);
     return this;
@@ -142,7 +144,7 @@ abstract class Instrument<T> {
     const type = "highpass";
     this._filterMap.set(
       type,
-      new BiquadFilterNode(this._ctx, { type, frequency })
+      new BiquadFilterNode(this.ctx, { type, frequency })
     );
     if (lfo) this._lfoMap.set(type, lfo);
     return this;
@@ -152,7 +154,7 @@ abstract class Instrument<T> {
     const type = "lowpass";
     this._filterMap.set(
       type,
-      new BiquadFilterNode(this._ctx, { type, frequency })
+      new BiquadFilterNode(this.ctx, { type, frequency })
     );
     if (lfo) this._lfoMap.set(type, lfo);
     return this;
@@ -170,6 +172,10 @@ abstract class Instrument<T> {
       node.disconnect();
     });
     this._lfoMap.forEach((lfo) => lfo.disconnect());
+  }
+
+  get ctx() {
+    return this._drome.ctx;
   }
 }
 

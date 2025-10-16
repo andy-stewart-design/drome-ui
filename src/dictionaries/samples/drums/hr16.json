@@ -1,0 +1,28 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": ["AlesisHR16/alesishr16-bd/Bassdrum.wav"],
+    "cp": ["AlesisHR16/alesishr16-cp/Clap.wav"],
+    "hh": ["AlesisHR16/alesishr16-hh/Closed Hat.wav"],
+    "ht": ["AlesisHR16/alesishr16-ht/Tom-2.wav"],
+    "lt": ["AlesisHR16/alesishr16-lt/Tom-1.wav"],
+    "oh": ["AlesisHR16/alesishr16-oh/Open Hat.wav"],
+    "perc": [
+      "AlesisHR16/alesishr16-perc/Agogo Bell.wav",
+      "AlesisHR16/alesishr16-perc/Claves.wav",
+      "AlesisHR16/alesishr16-perc/Conga H.wav",
+      "AlesisHR16/alesishr16-perc/Conga L.wav",
+      "AlesisHR16/alesishr16-perc/Timbale.wav",
+      "AlesisHR16/alesishr16-perc/Triangle.wav",
+      "AlesisHR16/alesishr16-perc/Wood Block H.wav",
+      "AlesisHR16/alesishr16-perc/Wood Block L.wav"
+    ],
+    "rim": ["AlesisHR16/alesishr16-rim/Rim.wav"],
+    "sd": ["AlesisHR16/alesishr16-sd/Snaredrum.wav"],
+    "sh": [
+      "AlesisHR16/alesishr16-sh/Cabasa.wav",
+      "AlesisHR16/alesishr16-sh/Maracas.wav",
+      "AlesisHR16/alesishr16-sh/Shaker.wav"
+    ]
+  }
+}

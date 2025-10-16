@@ -1,0 +1,22 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "RolandTR707/rolandtr707-bd/Bassdrum-01.wav",
+      "RolandTR707/rolandtr707-bd/Bassdrum-02.wav"
+    ],
+    "cb": ["RolandTR707/rolandtr707-cb/Cowbell.wav"],
+    "cp": ["RolandTR707/rolandtr707-cp/Clap.wav"],
+    "cr": ["RolandTR707/rolandtr707-cr/Crash.wav"],
+    "hh": ["RolandTR707/rolandtr707-hh/Hat Closed.wav"],
+    "ht": ["RolandTR707/rolandtr707-ht/Tom H.wav"],
+    "lt": ["RolandTR707/rolandtr707-lt/Tom L.wav"],
+    "mt": ["RolandTR707/rolandtr707-mt/Tom M.wav"],
+    "oh": ["RolandTR707/rolandtr707-oh/Hat Open.wav"],
+    "rim": ["RolandTR707/rolandtr707-rim/Rimshot.wav"],
+    "sd": [
+      "RolandTR707/rolandtr707-sd/Snaredrum-01.wav",
+      "RolandTR707/rolandtr707-sd/Snaredrum-02.wav"
+    ]
+  }
+}

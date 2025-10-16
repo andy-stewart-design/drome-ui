@@ -1,0 +1,33 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": ["RolandCompurhythm78/rolandcompurhythm78-bd/Bassdrum.wav"],
+    "cb": ["RolandCompurhythm78/rolandcompurhythm78-cb/Cowbell.wav"],
+    "hh": [
+      "RolandCompurhythm78/rolandcompurhythm78-hh/Hat Closed-01.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-hh/Hat Closed-02.wav"
+    ],
+    "misc": [
+      "RolandCompurhythm78/rolandcompurhythm78-misc/Quid-01.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-misc/Quid-02.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-misc/Quid-03.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-misc/Quid-04.wav"
+    ],
+    "oh": [
+      "RolandCompurhythm78/rolandcompurhythm78-oh/Hat Open-01.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-oh/Hat Open-02.wav"
+    ],
+    "perc": [
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Conga H.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Conga L.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Conga M.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Hit.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Woodblock-01.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Woodblock-02.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Woodblock-03.wav",
+      "RolandCompurhythm78/rolandcompurhythm78-perc/Woodblock-04.wav"
+    ],
+    "sd": ["RolandCompurhythm78/rolandcompurhythm78-sd/Snaredrum.wav"],
+    "tb": ["RolandCompurhythm78/rolandcompurhythm78-tb/Tambourine.wav"]
+  }
+}

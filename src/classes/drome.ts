@@ -1,32 +1,46 @@
 import AudioClock from "./audio-clock";
 import Sample from "./sample";
 import Synth from "./synth";
+import { sampleBanks } from "../utils/get-sample-path";
 
 class Drome {
-  readonly _clock: AudioClock;
-  readonly _instruments: (Synth | Sample)[] = [];
+  readonly clock: AudioClock;
+  readonly instruments: (Synth | Sample)[] = [];
   readonly audioChannels: GainNode[];
+  readonly bufferCache: Map<string, AudioBuffer> = new Map();
 
   constructor() {
-    this._clock = new AudioClock();
+    this.clock = new AudioClock();
     this.audioChannels = Array.from({ length: 8 }, () => {
       const gain = new GainNode(this.ctx, { gain: 0.75 });
       gain.connect(this.ctx.destination);
       return gain;
     });
+    console.log(sampleBanks);
   }
 
-  synth(...type: OscillatorType[]) {
-    const synth = new Synth(this.ctx, {
-      type: type,
+  synth(...types: OscillatorType[]) {
+    const synth = new Synth(this, {
+      type: types,
       destination: this.audioChannels[0],
+      defaultCycle: [[60]],
     });
-    this._instruments.push(synth);
+    this.instruments.push(synth);
     return synth;
   }
 
+  sample(...sampleIds: string[]) {
+    const sample = new Sample(this, {
+      destination: this.audioChannels[1],
+      sampleIds: sampleIds,
+      defaultCycle: [[0]],
+    });
+    this.instruments.push(sample);
+    return sample;
+  }
+
   get ctx() {
-    return this._clock.ctx;
+    return this.clock.ctx;
   }
 
   get currentTime() {
@@ -34,7 +48,7 @@ class Drome {
   }
 
   get barDuration() {
-    return this._clock.barDuration;
+    return this.clock.barDuration;
   }
 }
 

@@ -1,0 +1,16 @@
+{
+  "basePath": "https://raw.githubusercontent.com/andy-stewart-design/samples-sonic-pi/main/",
+  "slugs": {
+    "ambi": [
+      "ambient/ambi_choir.wav",
+      "ambient/ambi_drone.wav",
+      "ambient/ambi_haunted_hum.wav"
+    ],
+    "bass": [
+      "/bass/00_bass_thick_c.wav",
+      "/bass/01_bass_trance_c.wav",
+      "/bass/02_bass_dnb_f.wav",
+      "/bass/03_bass_drop_c.wav"
+    ]
+  }
+}

@@ -1,0 +1,27 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "RhythmAce/rhythmace-bd/Bassdrum-01.wav",
+      "RhythmAce/rhythmace-bd/Bassdrum-02.wav",
+      "RhythmAce/rhythmace-bd/Bassdrum-03.wav"
+    ],
+    "hh": ["RhythmAce/rhythmace-hh/Hat Closed.wav"],
+    "ht": ["RhythmAce/rhythmace-ht/Tom H.wav"],
+    "lt": ["RhythmAce/rhythmace-lt/Tom L.wav"],
+    "oh": ["RhythmAce/rhythmace-oh/Hat Open.wav"],
+    "perc": [
+      "RhythmAce/rhythmace-perc/Clave.wav",
+      "RhythmAce/rhythmace-perc/Click.wav",
+      "RhythmAce/rhythmace-perc/Percussion-01.wav",
+      "RhythmAce/rhythmace-perc/Percussion-02.wav",
+      "RhythmAce/rhythmace-perc/Percussion-03.wav",
+      "RhythmAce/rhythmace-perc/Percussion-04.wav"
+    ],
+    "sd": [
+      "RhythmAce/rhythmace-sd/Snaredrum-01.wav",
+      "RhythmAce/rhythmace-sd/Snaredrum-02.wav",
+      "RhythmAce/rhythmace-sd/Snaredrum-03.wav"
+    ]
+  }
+}

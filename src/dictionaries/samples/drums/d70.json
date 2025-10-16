@@ -1,0 +1,29 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "RolandD70/rolandd70-bd/Bassdrum-01.wav",
+      "RolandD70/rolandd70-bd/Bassdrum-02.wav",
+      "RolandD70/rolandd70-bd/Bassdrum-03.wav",
+      "RolandD70/rolandd70-bd/Bassdrum-04.wav"
+    ],
+    "cb": ["RolandD70/rolandd70-cb/Cowbell.wav"],
+    "cp": ["RolandD70/rolandd70-cp/Clap.wav"],
+    "cr": ["RolandD70/rolandd70-cr/Crash.wav"],
+    "hh": ["RolandD70/rolandd70-hh/Hat Closed.wav"],
+    "lt": ["RolandD70/rolandd70-lt/Tom-02.wav"],
+    "mt": ["RolandD70/rolandd70-mt/Tom.-01.wav"],
+    "oh": ["RolandD70/rolandd70-oh/Hat Open.wav"],
+    "perc": ["RolandD70/rolandd70-perc/Sticks.wav"],
+    "rd": ["RolandD70/rolandd70-rd/Ride.wav"],
+    "rim": ["RolandD70/rolandd70-rim/Rim Shot.wav"],
+    "sd": [
+      "RolandD70/rolandd70-sd/Snaredrum-01.wav",
+      "RolandD70/rolandd70-sd/Snaredrum-02.wav",
+      "RolandD70/rolandd70-sd/Snaredrum-03.wav",
+      "RolandD70/rolandd70-sd/Snaredrum-04.wav",
+      "RolandD70/rolandd70-sd/Snaredrum-05.wav"
+    ],
+    "sh": ["RolandD70/rolandd70-sh/Cabasa.wav"]
+  }
+}

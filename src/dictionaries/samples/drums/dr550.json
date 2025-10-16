@@ -1,0 +1,75 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": [
+      "BossDR550/bossdr550-bd/Bassdrum-01.wav",
+      "BossDR550/bossdr550-bd/Bassdrum-02.wav",
+      "BossDR550/bossdr550-bd/Bassdrum-03.wav",
+      "BossDR550/bossdr550-bd/Bassdrum-04.wav",
+      "BossDR550/bossdr550-bd/Bassdrum-05.wav"
+    ],
+    "cb": [
+      "BossDR550/bossdr550-cb/Cowbell-01.wav",
+      "BossDR550/bossdr550-cb/Cowbell-02.wav"
+    ],
+    "cp": ["BossDR550/bossdr550-cp/Clap.wav"],
+    "cr": ["BossDR550/bossdr550-cr/Crash.wav"],
+    "hh": [
+      "BossDR550/bossdr550-hh/Hat Closed-01.wav",
+      "BossDR550/bossdr550-hh/Hat Closed-02.wav"
+    ],
+    "ht": [
+      "BossDR550/bossdr550-ht/Tom H-01.wav",
+      "BossDR550/bossdr550-ht/Tom H-02.wav",
+      "BossDR550/bossdr550-ht/Tom H-03.wav"
+    ],
+    "lt": [
+      "BossDR550/bossdr550-lt/Tom L-01.wav",
+      "BossDR550/bossdr550-lt/Tom L-02.wav",
+      "BossDR550/bossdr550-lt/Tom L-03.wav"
+    ],
+    "misc": [
+      "BossDR550/bossdr550-misc/Hi Q.wav",
+      "BossDR550/bossdr550-misc/Srcatch-01.wav",
+      "BossDR550/bossdr550-misc/Srcatch-02.wav"
+    ],
+    "mt": [
+      "BossDR550/bossdr550-mt/Tom M-01.wav",
+      "BossDR550/bossdr550-mt/Tom M-02.wav"
+    ],
+    "oh": [
+      "BossDR550/bossdr550-oh/Hat Open-01.wav",
+      "BossDR550/bossdr550-oh/Hat Open-02.wav"
+    ],
+    "perc": [
+      "BossDR550/bossdr550-perc/Agogo H.wav",
+      "BossDR550/bossdr550-perc/Agogo L.wav",
+      "BossDR550/bossdr550-perc/Bongo H.wav",
+      "BossDR550/bossdr550-perc/Bongo L.wav",
+      "BossDR550/bossdr550-perc/Claves.wav",
+      "BossDR550/bossdr550-perc/Conga H.wav",
+      "BossDR550/bossdr550-perc/Conga L.wav",
+      "BossDR550/bossdr550-perc/Conga S.wav",
+      "BossDR550/bossdr550-perc/Timbale H.wav",
+      "BossDR550/bossdr550-perc/Timbale L.wav",
+      "BossDR550/bossdr550-perc/Whistle.wav"
+    ],
+    "rd": [
+      "BossDR550/bossdr550-rd/Ride-01.wav",
+      "BossDR550/bossdr550-rd/Ride-02.wav"
+    ],
+    "rim": ["BossDR550/bossdr550-rim/Rim Shot.wav"],
+    "sd": [
+      "BossDR550/bossdr550-sd/Snaredrum-01.wav",
+      "BossDR550/bossdr550-sd/Snaredrum-02.wav",
+      "BossDR550/bossdr550-sd/Snaredrum-03.wav",
+      "BossDR550/bossdr550-sd/Snaredrum-04.wav",
+      "BossDR550/bossdr550-sd/Snaredrum-05.wav",
+      "BossDR550/bossdr550-sd/Snaredrum-06.wav"
+    ],
+    "sh": [
+      "BossDR550/bossdr550-sh/Cabasa-01.wav",
+      "BossDR550/bossdr550-sh/Cabasa-02.wav"
+    ]
+  }
+}

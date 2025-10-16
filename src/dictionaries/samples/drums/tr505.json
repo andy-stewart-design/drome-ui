@@ -1,0 +1,25 @@
+{
+  "basePath": "https://raw.githubusercontent.com/ritchse/tidal-drum-machines/main/machines/",
+  "slugs": {
+    "bd": ["RolandTR505/rolandtr505-bd/Bassdrum.wav"],
+    "cb": [
+      "RolandTR505/rolandtr505-cb/Cowbell H.wav",
+      "RolandTR505/rolandtr505-cb/Cowbell L.wav"
+    ],
+    "cp": ["RolandTR505/rolandtr505-cp/Clap.wav"],
+    "cr": ["RolandTR505/rolandtr505-cr/Crash.wav"],
+    "hh": ["RolandTR505/rolandtr505-hh/Hat Closed.wav"],
+    "ht": ["RolandTR505/rolandtr505-ht/Tom H.wav"],
+    "lt": ["RolandTR505/rolandtr505-lt/Tom L.wav"],
+    "mt": ["RolandTR505/rolandtr505-mt/Tom M.wav"],
+    "oh": ["RolandTR505/rolandtr505-oh/Hat Open.wav"],
+    "perc": [
+      "RolandTR505/rolandtr505-perc/Conga H.wav",
+      "RolandTR505/rolandtr505-perc/Conga L.wav",
+      "RolandTR505/rolandtr505-perc/Timbale.wav"
+    ],
+    "rd": ["RolandTR505/rolandtr505-rd/Ride.wav"],
+    "rim": ["RolandTR505/rolandtr505-rim/Rimshot.wav"],
+    "sd": ["RolandTR505/rolandtr505-sd/Snaredrum.wav"]
+  }
+}

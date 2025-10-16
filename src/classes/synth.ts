@@ -1,15 +1,16 @@
 import Instrument, { type InstrumentOptions } from "./instrument";
 import { midiToFrequency } from "../utils/midi-to-frequency";
+import type Drome from "./drome";
 
-interface SynthOptions extends InstrumentOptions {
+interface SynthOptions extends InstrumentOptions<number> {
   type?: OscillatorType[];
 }
 
 export default class Synth extends Instrument<number> {
   private _types: OscillatorType[];
 
-  constructor(ctx: AudioContext, opts: SynthOptions) {
-    super(ctx, { ...opts, gain: 0.375 });
+  constructor(drome: Drome, opts: SynthOptions) {
+    super(drome, { ...opts, gain: 0.375 });
     this._types = opts.type?.length ? opts.type : ["sine"];
   }
 
@@ -21,14 +22,14 @@ export default class Synth extends Instrument<number> {
         midiChord?.forEach((midiNote) => {
           if (!midiNote) return;
 
-          const osc = new OscillatorNode(this._ctx, {
+          const osc = new OscillatorNode(this.ctx, {
             frequency: midiToFrequency(midiNote),
             type,
             detune: this._detune,
           });
           this._audioNodes.add(osc);
 
-          const gainNode = new GainNode(this._ctx);
+          const gainNode = new GainNode(this.ctx);
           this._gainNodes.add(gainNode);
 
           const noteStart = barStart + chordIndex * noteDuration;

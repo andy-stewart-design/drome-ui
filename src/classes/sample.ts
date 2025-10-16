@@ -1,54 +1,27 @@
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import Instrument, { type InstrumentOptions } from "./instrument";
+import type Drome from "./drome";
 
-interface SampleOptions extends InstrumentOptions {
+interface SampleOptions extends InstrumentOptions<number> {
+  sampleIds?: string[];
+  sampleBank?: string;
   playbackRate?: number;
   loop?: boolean;
 }
 
 export default class Sample extends Instrument<number> {
+  private _sampleIds: string[];
+  private _sampleBank: string;
   private _playbackRate: number;
   private _loop: boolean;
+  private _fitValue: number | undefined;
 
-  constructor(ctx: AudioContext, opts: SampleOptions) {
-    super(ctx, opts);
+  constructor(drome: Drome, opts: SampleOptions) {
+    super(drome, opts);
+    this._sampleIds = opts.sampleIds?.length ? opts.sampleIds : ["bd"];
+    this._sampleBank = opts.sampleBank || "tr909";
     this._playbackRate = opts.playbackRate || 1;
     this._loop = opts.loop ?? false;
-  }
-
-  static createNoiseBuffer(ctx: AudioContext, duration = 1) {
-    const noiseBuffer = new AudioBuffer({
-      length: ctx.sampleRate * duration,
-      sampleRate: ctx.sampleRate,
-    });
-
-    const data = noiseBuffer.getChannelData(0);
-
-    for (let i = 0; i < noiseBuffer.length; i++) {
-      data[i] = Math.random() * 2 - 1;
-    }
-
-    return noiseBuffer;
-  }
-
-  static async loadSample(ctx: AudioContext, url: string) {
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        const msg = `Failed to fetch sample: ${response.status} ${response.statusText}`;
-        throw new Error(msg);
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBuffer = await new Promise<AudioBuffer>((resolve, reject) => {
-        ctx.decodeAudioData(arrayBuffer, resolve, reject);
-      });
-
-      return audioBuffer;
-    } catch (error) {
-      console.error(`Error loading sample from "${url}":`, error);
-      return null;
-    }
   }
 
   play(
@@ -57,13 +30,11 @@ export default class Sample extends Instrument<number> {
     stepLength: number,
     chopIndex?: number
   ) {
-    const sampleStartOffset = chopIndex
-      ? buffer.duration * (1 / 4) * chopIndex
-      : 0;
-    const samplePlayDuration = chopIndex
-      ? buffer.duration * (1 / 4)
-      : buffer.duration;
-    const sampleSource = new AudioBufferSourceNode(this._ctx, {
+    const { duration } = buffer;
+    const sampleStartOffset = chopIndex ? duration * (1 / 4) * chopIndex : 0;
+    const samplePlayDuration = chopIndex ? duration * (1 / 4) : duration;
+
+    const sampleSource = new AudioBufferSourceNode(this.ctx, {
       buffer,
       playbackRate: this._playbackRate,
       loop: this._loop,
@@ -71,7 +42,8 @@ export default class Sample extends Instrument<number> {
     });
     this._audioNodes.add(sampleSource);
 
-    const gainNode = new GainNode(this._ctx);
+    const gainNode = new GainNode(this.ctx);
+    this._gainNodes.add(gainNode);
 
     const effectiveDuration = Math.min(
       samplePlayDuration / this._playbackRate,
@@ -99,9 +71,10 @@ export default class Sample extends Instrument<number> {
     sampleSource.connect(gainNode).connect(this.connectChain());
     sampleSource.start(start, sampleStartOffset, samplePlayDuration);
     sampleSource.onended = () => {
+      sampleSource.disconnect();
       this._audioNodes.delete(sampleSource);
       gainNode.disconnect();
-      sampleSource.disconnect();
+      this._gainNodes.delete(gainNode);
     };
   }
 }
