@@ -22,7 +22,7 @@ export default defineConfig([
     rules: {
       "no-unused-vars": "off", // Disable the base ESLint rule
       "@typescript-eslint/no-unused-vars": [
-        "error", // Or "warn", depending on your preference
+        "warn",
         {
           argsIgnorePattern: "^_",
           varsIgnorePattern: "^_",

@@ -53,4 +53,8 @@ export default class Synth extends Instrument<number> {
       });
     });
   }
+
+  stop() {
+    this._audioNodes.forEach((node) => node.stop());
+  }
 }

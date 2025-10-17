@@ -1,34 +1,19 @@
+// prettier-ignore
+const sampleBankNames = [
+  "9000","ace","cr78","d70","dmx","dr550", "hr16",
+  "ms404","rm50","tr505","tr606", "tr626","tr707",
+  "tr808","tr909","loops", "sonicpi"
+] as const;
+
 interface SampleBankData {
   basePath: string;
   slugs: Record<string, string[]>;
 }
 
-interface SampleBankSchema {
-  "9000": SampleBankData;
-  ace: SampleBankData;
-  cr78: SampleBankData;
-  d70: SampleBankData;
-  dmx: SampleBankData;
-  dr550: SampleBankData;
-  hr16: SampleBankData;
-  ms404: SampleBankData;
-  rm50: SampleBankData;
-  tr505: SampleBankData;
-  tr606: SampleBankData;
-  tr626: SampleBankData;
-  tr707: SampleBankData;
-  tr808: SampleBankData;
-  tr909: SampleBankData;
-  loops: SampleBankData;
+type SampleBankName = (typeof sampleBankNames)[number];
+type SampleBankSchema = Record<SampleBankName, SampleBankData> & {
   [key: string]: SampleBankData;
-}
-
-// prettier-ignore
-const sampleBankNames = [
-  "9000","ace","cr78","d70","dmx","dr550",
-  "hr16","ms404","rm50","tr505","tr606",
-  "tr626","tr707","tr808","tr909","loops",
-] as const;
+};
 
 function validateSampleBankData(data: unknown): asserts data is SampleBankData {
   if (typeof data !== "object" || data === null) {
