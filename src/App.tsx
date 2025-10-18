@@ -1,17 +1,18 @@
 import Drome from "./classes/drome";
 
 const d = new Drome();
-// const synth = d.synth("triangle").lpf(1200).note(69, 73, 76, 80);
+// const synth = d.synth("triangle").lpf(1200).note([69, 73, 76, 80]);
 
-d.sample("bd").rate(1).note(0, 0, 0, 0);
+// d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]);
 // .adsr(0.01, 0, 1, 0.1)
 // .adsrMode("clip");
 
-// d.sample("break:0")
-//   .bank("loops")
-//   // .fit(2)
-//   // .note(0, 0.25, 0.5, 0.75)
-//   .adsrMode("fit");
+d.sample("bass")
+  .bank("sonicpi")
+  // .fit(2)
+  // .note([0.75, 0.5], [0.25, 0])
+  // .adsr(0.02, 0, 1, 0.05)
+  .cut();
 
 function App() {
   return (

@@ -55,7 +55,7 @@ class Drome {
     const synth = new Synth(this, {
       type: types,
       destination: this.audioChannels[0],
-      defaultCycle: [[60]],
+      defaultCycle: [[[60]]],
     });
     this.instruments.push(synth);
     return synth;
@@ -65,7 +65,7 @@ class Drome {
     const sample = new Sample(this, {
       destination: this.audioChannels[1],
       sampleIds: sampleIds,
-      defaultCycle: [[0]],
+      defaultCycle: [[[0]]],
     });
     this.instruments.push(sample);
     return sample;
@@ -73,6 +73,10 @@ class Drome {
 
   get ctx() {
     return this.clock.ctx;
+  }
+
+  get metronome() {
+    return this.clock.metronome;
   }
 
   get currentTime() {

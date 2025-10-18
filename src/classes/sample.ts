@@ -16,6 +16,7 @@ export default class Sample extends Instrument<number> {
   private _playbackRate: number;
   private _loop: boolean;
   private _fitValue: number | undefined;
+  private _cut = false;
 
   constructor(drome: Drome, opts: SampleOptions) {
     super(drome, opts);
@@ -48,6 +49,10 @@ export default class Sample extends Instrument<number> {
     return this._sampleIds.map(async (id) => this.loadSample(id));
   }
 
+  cut() {
+    this._cut = true;
+  }
+
   bank(bank: string) {
     this._sampleBank = bank;
     return this;
@@ -55,7 +60,7 @@ export default class Sample extends Instrument<number> {
 
   fit(numBars = 1) {
     this._fitValue = numBars;
-    this._cycle = [[0]];
+    this.note(...Array.from({ length: numBars }, (_, i) => i / numBars));
     return this;
   }
 
@@ -65,10 +70,13 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const noteDuration = barDuration / this._cycle.length;
+    super.play(barStart, barDuration);
+    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
+    const cycle = this._cycles[cycleIndex];
+    const noteDuration = barDuration / cycle.length;
 
     this._sampleIds.forEach((sampleId) => {
-      this._cycle.forEach((chopGroup, groupIndex) => {
+      cycle.forEach((chopGroup, groupIndex) => {
         chopGroup?.forEach(async (chopPoint) => {
           // chopPoint is a number between 0 and 1
           const { buffer } = await this.loadSample(sampleId);
@@ -78,11 +86,11 @@ export default class Sample extends Instrument<number> {
             ? buffer.duration / barDuration / this._fitValue
             : this._playbackRate;
           const chopStartTime = chopPoint * buffer.duration;
-          const chopDuration = buffer.duration / this._cycle.length;
-          const effectiveDuration = Math.min(
-            chopDuration,
-            buffer.duration / this._playbackRate
-          );
+          const chopDuration = buffer.duration - chopStartTime;
+          // const effectiveDuration = Math.min(
+          //   chopDuration,
+          //   buffer.duration / this._playbackRate
+          // );
 
           const src = new AudioBufferSourceNode(this.ctx, {
             buffer,
@@ -99,9 +107,7 @@ export default class Sample extends Instrument<number> {
           const endTime = this.applyAdsr(
             gainNode.gain,
             noteStart,
-            barDuration
-            // effectiveDuration
-            // buffer.duration / playbackRate
+            this._cut ? noteDuration : chopDuration
           );
           this.applyLFOs(this);
 
@@ -117,9 +123,5 @@ export default class Sample extends Instrument<number> {
         });
       });
     });
-  }
-
-  stop() {
-    this._audioNodes.forEach((node) => node.stop());
   }
 }

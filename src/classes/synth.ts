@@ -15,10 +15,13 @@ export default class Synth extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const noteDuration = barDuration / this._cycle.length;
+    super.play(barStart, barDuration);
+    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
+    const cycle = this._cycles[cycleIndex];
+    const noteDuration = barDuration / cycle.length;
 
     this._types.forEach((type) => {
-      this._cycle.forEach((midiChord, chordIndex) => {
+      cycle.forEach((midiChord, chordIndex) => {
         midiChord?.forEach((midiNote) => {
           if (!midiNote) return;
 
@@ -52,9 +55,5 @@ export default class Synth extends Instrument<number> {
         });
       });
     });
-  }
-
-  stop() {
-    this._audioNodes.forEach((node) => node.stop());
   }
 }

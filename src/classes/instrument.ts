@@ -10,12 +10,13 @@ type Nullable<T> = T | null | undefined;
 type InstrumentType = "synth" | "sample";
 type FilterType = (typeof filterTypes)[number];
 type LfoableParam = "detune" | FilterType;
-type Chord<T> = Nullable<T>[];
+type Note<T> = Nullable<T>;
+type Chord<T> = Note<T>[];
 type Cycle<T> = Nullable<Chord<T>>[];
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
-  defaultCycle?: Cycle<T>;
+  defaultCycle?: Cycle<T>[];
   gain?: number;
   adsr?: AdsrEnvelope;
 }
@@ -25,19 +26,20 @@ abstract class Instrument<T> {
   protected _destination: AudioNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
-  protected _cycle: Cycle<T>;
+  protected _cycles: Cycle<T>[];
   protected _gain: number;
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
   protected _detune: number = 0;
   protected _filterMap: Map<BiquadFilterType, BiquadFilterNode>;
   protected _lfoMap: Map<LfoableParam, LFO>;
+  protected _startTime: number | undefined;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
     this._audioNodes = new Set();
     this._gainNodes = new Set();
-    this._cycle = opts.defaultCycle || [];
+    this._cycles = opts.defaultCycle || [];
     this._destination = opts.destination;
     this._gain = opts.gain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
@@ -92,8 +94,17 @@ abstract class Instrument<T> {
     return this._destination;
   }
 
-  note(...notes: Chord<T> | Cycle<T>) {
-    this._cycle = notes.map((v) => (Array.isArray(v) ? v : [v]));
+  note(...input: (T | Chord<T> | Cycle<T>)[]) {
+    const isArray = Array.isArray;
+    console.log(JSON.stringify(input));
+
+    this._cycles = input.map((cycle) =>
+      isArray(cycle)
+        ? cycle.map((chord) => (isArray(chord) ? chord : [chord]))
+        : [[cycle]]
+    );
+    console.log(JSON.stringify(this._cycles));
+
     return this;
   }
 
@@ -164,6 +175,31 @@ abstract class Instrument<T> {
     this._detune = x;
     if (lfo) this._lfoMap.set("detune", lfo);
     return this;
+  }
+
+  play(barStart: number, barDuration: number): void;
+  play(barStart: number) {
+    this._startTime = barStart;
+  }
+
+  stop(when?: number) {
+    const startTime = this._startTime ?? this.ctx.currentTime;
+    const stopTime = when ?? this.ctx.currentTime;
+    const relTime = 0.125;
+
+    if (startTime > this.ctx.currentTime) {
+      this._audioNodes.forEach((node) => node.stop());
+      // this.lfoNodes.forEach((lfo) => lfo.osc.stop());
+    } else {
+      this._gainNodes.forEach((node) => {
+        node.gain.cancelScheduledValues(stopTime);
+        node.gain.setValueAtTime(node.gain.value, stopTime);
+        node.gain.linearRampToValueAtTime(0, stopTime + relTime);
+      });
+
+      this._audioNodes.forEach((node) => node.stop(stopTime + relTime + 0.1));
+      // this.lfoNodes.forEach((lfo) => lfo.osc.stop(stopTime + relTime));
+    }
   }
 
   cleanup() {
