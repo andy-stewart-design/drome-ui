@@ -6,10 +6,10 @@ import type Synth from "./synth";
 import type Drome from "./drome";
 
 const filterTypes = ["bandpass", "highpass", "lowpass"] as const;
-type Nullable<T> = T | null | undefined;
 type InstrumentType = "synth" | "sample";
 type FilterType = (typeof filterTypes)[number];
 type LfoableParam = "detune" | FilterType;
+type Nullable<T> = T | null | undefined;
 type Note<T> = Nullable<T>;
 type Chord<T> = Note<T>[];
 type Cycle<T> = Nullable<Chord<T>>[];
@@ -35,6 +35,9 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<LfoableParam, LFO>;
   protected _startTime: number | undefined;
 
+  // Method Aliases
+  rev: () => this;
+
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
     this._audioNodes = new Set();
@@ -45,6 +48,8 @@ abstract class Instrument<T> {
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
     this._filterMap = new Map();
     this._lfoMap = new Map();
+
+    this.rev = this.reverse.bind(this);
   }
 
   protected applyAdsr(target: AudioParam, start: number, dur: number) {
@@ -96,15 +101,21 @@ abstract class Instrument<T> {
 
   note(...input: (T | Chord<T> | Cycle<T>)[]) {
     const isArray = Array.isArray;
-    console.log(JSON.stringify(input));
 
     this._cycles = input.map((cycle) =>
       isArray(cycle)
         ? cycle.map((chord) => (isArray(chord) ? chord : [chord]))
         : [[cycle]]
     );
-    console.log(JSON.stringify(this._cycles));
 
+    return this;
+  }
+
+  reverse() {
+    this._cycles = this._cycles
+      .slice()
+      .reverse()
+      .map((arr) => arr.slice().reverse());
     return this;
   }
 

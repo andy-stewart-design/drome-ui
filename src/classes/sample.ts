@@ -1,7 +1,13 @@
 import Instrument, { type InstrumentOptions } from "./instrument";
+import { flipBuffer } from "../utils/flip-buffer";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
+
+type Nullable<T> = T | null | undefined;
+type Note<T> = Nullable<T>;
+type Chord<T> = Note<T>[];
+type Cycle<T> = Nullable<Chord<T>>[];
 
 interface SampleOptions extends InstrumentOptions<number> {
   sampleIds?: string[];
@@ -49,12 +55,47 @@ export default class Sample extends Instrument<number> {
     return this._sampleIds.map(async (id) => this.loadSample(id));
   }
 
-  cut() {
-    this._cut = true;
-  }
-
   bank(bank: string) {
     this._sampleBank = bank;
+    return this;
+  }
+
+  chop(numChops: number, ...input: (number | Chord<number> | Cycle<number>)[]) {
+    const isArray = Array.isArray;
+    const convert = (n: Nullable<number>) => {
+      return typeof n === "number" ? (1 / numChops) * (n % numChops) : null;
+    };
+
+    if (!input.length) {
+      const chopsPerCycle = Math.floor(numChops / this._cycles.length) || 1;
+      // const step = Math.min(1 / numChops, 1 / this._cycles.length);
+      const step = 1 / (chopsPerCycle * this._cycles.length);
+
+      this._cycles = Array.from({ length: this._cycles.length }, (_, i) => {
+        return Array.from({ length: chopsPerCycle }, (_, j) => {
+          return [step * j + chopsPerCycle * step * i];
+        });
+      });
+      console.log(chopsPerCycle);
+    } else {
+      this._cycles = input.map((cycle) =>
+        isArray(cycle)
+          ? cycle.map((chord) =>
+              isArray(chord)
+                ? chord.map((note) => convert(note))
+                : [convert(chord)]
+            )
+          : [[convert(cycle)]]
+      );
+    }
+
+    console.log(this._cycles);
+
+    return this;
+  }
+
+  cut() {
+    this._cut = true;
     return this;
   }
 
@@ -84,16 +125,13 @@ export default class Sample extends Instrument<number> {
 
           const playbackRate = this._fitValue
             ? buffer.duration / barDuration / this._fitValue
-            : this._playbackRate;
+            : Math.abs(this._playbackRate);
           const chopStartTime = chopPoint * buffer.duration;
           const chopDuration = buffer.duration - chopStartTime;
-          // const effectiveDuration = Math.min(
-          //   chopDuration,
-          //   buffer.duration / this._playbackRate
-          // );
 
           const src = new AudioBufferSourceNode(this.ctx, {
-            buffer,
+            buffer:
+              this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
             playbackRate: playbackRate,
             loop: this._loop,
             detune: this._detune,
