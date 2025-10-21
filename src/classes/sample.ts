@@ -142,16 +142,26 @@ export default class Sample extends Instrument<number> {
           this._gainNodes.add(gainNode);
 
           const noteStart = barStart + groupIndex * noteDuration;
-          const endTime = this.applyAdsr(
+          // const endTime = this.applyGainAdsr(
+          this.applyGainAdsr(
             gainNode.gain,
+            noteStart,
+            this._cut ? noteDuration : chopDuration
+          );
+          const filterNodes = this.createFilters(
             noteStart,
             this._cut ? noteDuration : chopDuration
           );
           this.applyLFOs(this);
 
-          src.connect(gainNode).connect(this.connectChain());
+          const nodes = [src, gainNode, ...filterNodes, this.connectChain()];
+          nodes.forEach((node, i) => {
+            const nextNode = nodes[i + 1];
+            if (nextNode) node.connect(nextNode);
+          });
+
           src.start(noteStart, chopStartTime);
-          src.stop(noteStart + endTime);
+          // src.stop(noteStart + endTime + 0.1);
           src.onended = () => {
             src.disconnect();
             this._audioNodes.delete(src);

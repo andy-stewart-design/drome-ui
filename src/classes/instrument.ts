@@ -14,6 +14,13 @@ type Note<T> = Nullable<T>;
 type Chord<T> = Note<T>[];
 type Cycle<T> = Nullable<Chord<T>>[];
 
+interface FilterOptions {
+  type: FilterType;
+  frequency: number;
+  q: number;
+  env: { depth: number; adsr: AdsrEnvelope } | undefined;
+}
+
 interface InstrumentOptions<T> {
   destination: AudioNode;
   defaultCycle?: Cycle<T>[];
@@ -31,7 +38,7 @@ abstract class Instrument<T> {
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
   protected _detune: number = 0;
-  protected _filterMap: Map<BiquadFilterType, BiquadFilterNode>;
+  protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<LfoableParam, LFO>;
   protected _startTime: number | undefined;
 
@@ -52,7 +59,14 @@ abstract class Instrument<T> {
     this.rev = this.reverse.bind(this);
   }
 
-  protected applyAdsr(target: AudioParam, start: number, dur: number) {
+  private createFilter(type: FilterType, frequency: number, lfo?: LFO) {
+    // node: new BiquadFilterNode(this.ctx, { type, frequency }),
+    this._filterMap.set(type, { type, frequency, q: 1, env: undefined });
+
+    if (lfo) this._lfoMap.set(type, lfo);
+  }
+
+  protected applyGainAdsr(target: AudioParam, start: number, dur: number) {
     const envTimes = getAdsrTimes({
       a: this._adsr.a,
       d: this._adsr.d,
@@ -65,8 +79,8 @@ abstract class Instrument<T> {
       target,
       startTime: start,
       envTimes,
-      gain: this._gain,
-      sustainLevel: this._adsr.s,
+      maxValue: this._gain,
+      sustainValue: this._adsr.s * this._gain,
     });
 
     return envTimes.r.end;
@@ -77,26 +91,57 @@ abstract class Instrument<T> {
       if (name === "detune") {
         this._audioNodes.forEach((node) => lfo.connect(node[name]));
       } else if (filterTypes.includes(name)) {
-        const filter = this._filterMap.get(name);
-        if (filter) lfo.connect(filter.frequency);
+        // const filter = this._filterMap.get(name);
+        // if (filter) lfo.connect(filter.node.frequency);
       }
       if (lfo.paused) lfo.start();
     });
   }
 
   protected connectChain() {
-    const filters = Array.from(this._filterMap.values());
+    // const filters = Array.from(this._filterMap.values()).map((v) => v.node);
 
-    if (filters.length) {
-      const nodes = [...filters, this._destination];
-      nodes.forEach((node, i) => {
-        const nextNode = nodes[i + 1];
-        if (nextNode) node.connect(nextNode);
-      });
-      return nodes[0];
-    }
+    // if (filters.length) {
+    //   const nodes = [...filters, this._destination];
+    //   nodes.forEach((node, i) => {
+    //     const nextNode = nodes[i + 1];
+    //     if (nextNode) node.connect(nextNode);
+    //   });
+    //   return nodes[0];
+    // }
 
     return this._destination;
+  }
+
+  protected createFilters(startTime: number, duration: number) {
+    return Array.from(this._filterMap.values()).map((v) => {
+      const filter = new BiquadFilterNode(this.ctx, {
+        type: v.type,
+        frequency: v.frequency,
+        Q: v.q,
+      });
+
+      if (v.env) {
+        const envTimes = getAdsrTimes({
+          a: v.env.adsr.a,
+          d: v.env.adsr.d,
+          r: v.env.adsr.r,
+          duration,
+          mode: this._adsrMode,
+        });
+        applyAdsr({
+          target: filter.frequency,
+          startTime,
+          startValue: v.frequency,
+          envTimes,
+          maxValue: v.frequency * v.env.depth,
+          sustainValue: v.frequency * v.env.adsr.s,
+          endValue: 30,
+        });
+      }
+
+      return filter;
+    });
   }
 
   note(...input: (T | Chord<T> | Cycle<T>)[]) {
@@ -116,6 +161,11 @@ abstract class Instrument<T> {
       .slice()
       .reverse()
       .map((arr) => arr.slice().reverse());
+    return this;
+  }
+
+  gain(v: number) {
+    this._gain = v;
     return this;
   }
 
@@ -153,32 +203,41 @@ abstract class Instrument<T> {
   }
 
   bpf(frequency: number, lfo?: LFO) {
-    const type = "bandpass";
-    this._filterMap.set(
-      type,
-      new BiquadFilterNode(this.ctx, { type, frequency })
-    );
-    if (lfo) this._lfoMap.set(type, lfo);
+    this.createFilter("bandpass", frequency, lfo);
+    return this;
+  }
+
+  bpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
+    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
+    const filter = this._filterMap.get("bandpass");
+    if (filter) filter.env = { depth, adsr };
+
     return this;
   }
 
   hpf(frequency: number, lfo?: LFO) {
-    const type = "highpass";
-    this._filterMap.set(
-      type,
-      new BiquadFilterNode(this.ctx, { type, frequency })
-    );
-    if (lfo) this._lfoMap.set(type, lfo);
+    this.createFilter("highpass", frequency, lfo);
+    return this;
+  }
+
+  hpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
+    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
+    const filter = this._filterMap.get("highpass");
+    if (filter) filter.env = { depth, adsr };
+
     return this;
   }
 
   lpf(frequency: number, lfo?: LFO) {
-    const type = "lowpass";
-    this._filterMap.set(
-      type,
-      new BiquadFilterNode(this.ctx, { type, frequency })
-    );
-    if (lfo) this._lfoMap.set(type, lfo);
+    this.createFilter("lowpass", frequency, lfo);
+    return this;
+  }
+
+  lpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
+    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
+    const filter = this._filterMap.get("lowpass");
+    if (filter) filter.env = { depth, adsr };
+
     return this;
   }
 

@@ -24,9 +24,11 @@ interface getAdsrTimesArgs {
 interface applyAdsrArgs {
   target: AudioParam;
   startTime: number;
-  gain: number;
-  sustainLevel: number;
   envTimes: AdsrTimes;
+  startValue?: number;
+  maxValue: number;
+  sustainValue: number;
+  endValue?: number;
 }
 
 function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
@@ -61,16 +63,18 @@ function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
 function applyAdsr({
   target,
   startTime,
-  gain,
-  sustainLevel,
   envTimes,
+  startValue = 0,
+  maxValue,
+  sustainValue,
+  endValue = 0,
 }: applyAdsrArgs) {
   target.cancelScheduledValues(startTime);
-  target.setValueAtTime(0, startTime);
-  target.linearRampToValueAtTime(gain, startTime + envTimes.a);
-  target.linearRampToValueAtTime(sustainLevel * gain, startTime + envTimes.d);
-  target.setValueAtTime(sustainLevel * gain, startTime + envTimes.r.start);
-  target.linearRampToValueAtTime(0.001, startTime + envTimes.r.end);
+  target.setValueAtTime(startValue, startTime);
+  target.linearRampToValueAtTime(maxValue, startTime + envTimes.a);
+  target.linearRampToValueAtTime(sustainValue, startTime + envTimes.d);
+  target.setValueAtTime(sustainValue, startTime + envTimes.r.start);
+  target.linearRampToValueAtTime(endValue, startTime + envTimes.r.end);
 }
 
 export {

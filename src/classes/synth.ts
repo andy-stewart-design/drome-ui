@@ -36,16 +36,22 @@ export default class Synth extends Instrument<number> {
           this._gainNodes.add(gainNode);
 
           const noteStart = barStart + chordIndex * noteDuration;
-          const endTime = this.applyAdsr(
+          const noteEnd = this.applyGainAdsr(
             gainNode.gain,
             noteStart,
             noteDuration
           );
+          const filterNodes = this.createFilters(noteStart, noteDuration);
           this.applyLFOs(this);
 
-          osc.connect(gainNode).connect(this.connectChain());
+          const nodes = [osc, gainNode, ...filterNodes, this.connectChain()];
+          nodes.forEach((node, i) => {
+            const nextNode = nodes[i + 1];
+            if (nextNode) node.connect(nextNode);
+          });
+
           osc.start(noteStart);
-          osc.stop(noteStart + endTime);
+          osc.stop(noteStart + noteEnd);
           osc.onended = () => {
             osc.disconnect();
             this._audioNodes.delete(osc);
