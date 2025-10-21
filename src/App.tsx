@@ -4,10 +4,10 @@ const d = new Drome();
 
 const note = 40;
 
-// d.synth("sawtooth", "sine")
-//   .lpf(200)
-//   .lpenv(3, 0.25, 0.25, 1, 0.01)
-//   .note([note, note, note, note]);
+d.synth("sawtooth", "sine")
+  .lpf(200, 10)
+  .lpenv(3, 0.5, 0.5, 1, 0.1)
+  .note([note, note, note, note]);
 
 // d.synth("sawtooth", "sine")
 //   .lpf(100)
@@ -28,16 +28,16 @@ const note = 40;
 
 // d.sample("break").bank("loops").fit(2).chop(8, [0, 5, 1, 6]).cut();
 
-d.sample("rhodes")
-  .bank("loops")
-  .fit(2)
-  .chop(4)
-  .rev()
-  .cut()
-  .adsrMode("clip")
-  .bpf(600)
-  .bpenv(3)
-  .dec(0.02);
+// d.sample("rhodes")
+//   .bank("loops")
+//   .fit(2)
+//   .chop(4)
+//   .rev()
+//   .cut()
+//   .adsrMode("clip")
+//   .bpf(600)
+//   .bpenv(3)
+//   .dec(0.02);
 
 function App() {
   return (

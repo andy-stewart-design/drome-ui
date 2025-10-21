@@ -76,7 +76,6 @@ export default class Sample extends Instrument<number> {
           return [step * j + chopsPerCycle * step * i];
         });
       });
-      console.log(chopsPerCycle);
     } else {
       this._cycles = input.map((cycle) =>
         isArray(cycle)
@@ -88,8 +87,6 @@ export default class Sample extends Instrument<number> {
           : [[convert(cycle)]]
       );
     }
-
-    console.log(this._cycles);
 
     return this;
   }
@@ -162,12 +159,23 @@ export default class Sample extends Instrument<number> {
 
           src.start(noteStart, chopStartTime);
           // src.stop(noteStart + endTime + 0.1);
-          src.onended = () => {
+
+          const cleanup = () => {
             src.disconnect();
             this._audioNodes.delete(src);
             gainNode.disconnect();
             this._gainNodes.delete(gainNode);
+            // cleanup after delay to prevent popping
+            setTimeout(() => {
+              filterNodes.forEach((node) => {
+                node.disconnect();
+                this._filterNodes.delete(node);
+              });
+            }, 100);
+            src.removeEventListener("ended", cleanup);
           };
+
+          src.addEventListener("ended", cleanup);
         });
       });
     });

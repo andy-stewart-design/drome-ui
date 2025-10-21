@@ -52,12 +52,23 @@ export default class Synth extends Instrument<number> {
 
           osc.start(noteStart);
           osc.stop(noteStart + noteEnd);
-          osc.onended = () => {
+
+          const cleanup = () => {
             osc.disconnect();
             this._audioNodes.delete(osc);
             gainNode.disconnect();
             this._gainNodes.delete(gainNode);
+            // cleanup after delay to prevent popping
+            setTimeout(() => {
+              filterNodes.forEach((node) => {
+                node.disconnect();
+                this._filterNodes.delete(node);
+              });
+            }, 100);
+            osc.removeEventListener("ended", cleanup);
           };
+
+          osc.addEventListener("ended", cleanup);
         });
       });
     });

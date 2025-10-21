@@ -7,28 +7,12 @@ interface AdsrEnvelope {
   r: number;
 }
 
-interface AdsrTimes {
-  a: number;
-  d: number;
-  r: { start: number; end: number };
-}
-
 interface getAdsrTimesArgs {
   a: number;
   d: number;
   r: number;
   duration: number;
   mode: AdsrMode;
-}
-
-interface applyAdsrArgs {
-  target: AudioParam;
-  startTime: number;
-  envTimes: AdsrTimes;
-  startValue?: number;
-  maxValue: number;
-  sustainValue: number;
-  endValue?: number;
 }
 
 function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
@@ -60,6 +44,16 @@ function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
   }
 }
 
+interface applyAdsrArgs {
+  target: AudioParam;
+  startTime: number;
+  envTimes: ReturnType<typeof getAdsrTimes>;
+  startValue?: number;
+  maxValue: number;
+  sustainValue: number;
+  endValue?: number;
+}
+
 function applyAdsr({
   target,
   startTime,
@@ -77,10 +71,4 @@ function applyAdsr({
   target.linearRampToValueAtTime(endValue, startTime + envTimes.r.end);
 }
 
-export {
-  getAdsrTimes,
-  applyAdsr,
-  type AdsrTimes,
-  type AdsrMode,
-  type AdsrEnvelope,
-};
+export { getAdsrTimes, applyAdsr, type AdsrMode, type AdsrEnvelope };
