@@ -6,6 +6,8 @@ const note = 40;
 
 d.synth("sawtooth", "sine")
   .lpf(200, 10)
+  // .lplfo(300, 2)
+  // .dec(0.25)
   .lpenv(3, 0.5, 0.5, 1, 0.1)
   .note([note, note, note, note]);
 
@@ -14,7 +16,7 @@ d.synth("sawtooth", "sine")
 //   .lpenv(3, 0, 0.75, 0.375, 0.01)
 //   .note([note, note, note, note]);
 
-// d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]).rate(1);
+d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]).rate(1);
 // .adsr(0.01, 0, 1, 0.1)
 // .adsrMode("clip");
 

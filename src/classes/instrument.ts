@@ -1,8 +1,8 @@
 import { type AdsrEnvelope, type AdsrMode } from "../utils/adsr";
-import LFO from "./lfo";
+import LFO, { type LfoOptions } from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
-import type Sample from "./sample";
-import type Synth from "./synth";
+// import type Sample from "./sample";
+// import type Synth from "./synth";
 import type Drome from "./drome";
 
 const filterTypes = ["bandpass", "highpass", "lowpass"] as const;
@@ -31,32 +31,34 @@ interface InstrumentOptions<T> {
 abstract class Instrument<T> {
   protected _drome: Drome;
   protected _destination: AudioNode;
-  protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
-  protected readonly _gainNodes: Set<GainNode>;
-  protected readonly _filterNodes: Set<BiquadFilterNode>;
   protected _cycles: Cycle<T>[];
   protected _gain: number;
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
   protected _detune: number = 0;
-  protected _filterMap: Map<FilterType, FilterOptions>;
-  protected _lfoMap: Map<LfoableParam, LFO>;
   protected _startTime: number | undefined;
+  protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
+  protected readonly _gainNodes: Set<GainNode>;
+  protected _filterMap: Map<FilterType, FilterOptions>;
+  protected readonly _filterNodes: Set<BiquadFilterNode>;
+  protected _lfoMap: Map<LfoableParam, LfoOptions>;
+  protected readonly _lfoNodes: Set<LFO>;
 
   // Method Aliases
   rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
-    this._audioNodes = new Set();
-    this._gainNodes = new Set();
-    this._filterNodes = new Set();
     this._cycles = opts.defaultCycle || [];
     this._destination = opts.destination;
     this._gain = opts.gain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
+    this._audioNodes = new Set();
+    this._gainNodes = new Set();
     this._filterMap = new Map();
+    this._filterNodes = new Set();
     this._lfoMap = new Map();
+    this._lfoNodes = new Set();
 
     this.rev = this.reverse.bind(this);
   }
@@ -67,28 +69,33 @@ abstract class Instrument<T> {
   }
 
   protected createFilters(startTime: number, duration: number) {
-    return Array.from(this._filterMap.values()).map((v) => {
+    return Array.from(this._filterMap.entries()).map(([type, opts]) => {
       const filter = new BiquadFilterNode(this.ctx, {
-        type: v.type,
-        frequency: v.frequency,
-        Q: v.q,
+        type: opts.type,
+        frequency: opts.frequency,
+        Q: opts.q,
       });
+      const lfoOpts = this._lfoMap.get(type);
 
-      if (v.env) {
+      if (lfoOpts) {
+        const lfo = new LFO(this.ctx, lfoOpts);
+        lfo.connect(filter.frequency);
+        lfo.start();
+      } else if (opts.env) {
         const envTimes = getAdsrTimes({
-          a: v.env.adsr.a,
-          d: v.env.adsr.d,
-          r: v.env.adsr.r,
+          a: opts.env.adsr.a,
+          d: opts.env.adsr.d,
+          r: opts.env.adsr.r,
           duration,
           mode: this._adsrMode,
         });
         applyAdsr({
           target: filter.frequency,
           startTime,
-          startValue: v.frequency,
+          startValue: opts.frequency,
           envTimes,
-          maxValue: v.frequency * v.env.depth,
-          sustainValue: v.frequency * v.env.adsr.s,
+          maxValue: opts.frequency * opts.env.depth,
+          sustainValue: opts.frequency * opts.env.adsr.s,
           endValue: 30,
         });
       }
@@ -118,16 +125,16 @@ abstract class Instrument<T> {
     return envTimes.r.end;
   }
 
-  protected applyLFOs(_: Synth | Sample) {
-    Array.from(this._lfoMap.entries()).forEach(([name, lfo]) => {
-      if (name === "detune") {
-        this._audioNodes.forEach((node) => lfo.connect(node[name]));
-      } else if (filterTypes.includes(name)) {
-        // const filter = this._filterMap.get(name);
-        // if (filter) lfo.connect(filter.node.frequency);
-      }
-      if (lfo.paused) lfo.start();
-    });
+  protected applyLFOs() {
+    // Array.from(this._lfoMap.entries()).forEach(([name, lfo]) => {
+    //   if (name === "detune") {
+    //     this._audioNodes.forEach((node) => lfo.connect(node[name]));
+    //   } else if (filterTypes.includes(name)) {
+    //     // const filter = this._filterMap.get(name);
+    //     // if (filter) lfo.connect(filter.node.frequency);
+    //   }
+    //   if (lfo.paused) lfo.start();
+    // });
   }
 
   protected connectChain() {
@@ -242,9 +249,14 @@ abstract class Instrument<T> {
     return this;
   }
 
-  detune(x: number, lfo?: LFO) {
+  lplfo(depth: number, speed: number, type?: OscillatorType) {
+    this._lfoMap.set("lowpass", { depth, speed, type });
+    return this;
+  }
+
+  detune(x: number) {
     this._detune = x;
-    if (lfo) this._lfoMap.set("detune", lfo);
+    // if (lfo) this._lfoMap.set("detune", lfo);
     return this;
   }
 
@@ -260,7 +272,7 @@ abstract class Instrument<T> {
 
     if (startTime > this.ctx.currentTime) {
       this._audioNodes.forEach((node) => node.stop());
-      // this.lfoNodes.forEach((lfo) => lfo.osc.stop());
+      this.cleanup();
     } else {
       this._gainNodes.forEach((node) => {
         node.gain.cancelScheduledValues(stopTime);
@@ -277,18 +289,26 @@ abstract class Instrument<T> {
         if (i === 0) node.addEventListener("ended", handleEnded);
         node.stop(stopTime + relTime + 0.1);
       });
-      // this.lfoNodes.forEach((lfo) => lfo.osc.stop(stopTime + relTime));
     }
   }
 
   cleanup() {
-    this._filterNodes.forEach((node) => node.disconnect());
-    this._filterNodes.clear();
     this._gainNodes.forEach((node) => node.disconnect());
     this._gainNodes.clear();
     this._audioNodes.forEach((node) => node.disconnect());
     this._audioNodes.clear();
-    // this._lfoMap.forEach((lfo) => lfo.disconnect());
+    // cleanup after delay to prevent popping
+    setTimeout(() => {
+      this._filterNodes.forEach((node) => node.disconnect());
+      this._filterNodes.clear();
+      this._lfoNodes.forEach((node) => {
+        node.stop();
+        node.disconnect();
+      });
+      this._lfoNodes.clear();
+    }, 100);
+    // this._filterMap.clear();
+    // this._lfoMap.clear();
   }
 
   get ctx() {

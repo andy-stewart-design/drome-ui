@@ -149,7 +149,7 @@ export default class Sample extends Instrument<number> {
             noteStart,
             this._cut ? noteDuration : chopDuration
           );
-          this.applyLFOs(this);
+          // this.applyLFOs(this);
 
           const nodes = [src, gainNode, ...filterNodes, this.connectChain()];
           nodes.forEach((node, i) => {

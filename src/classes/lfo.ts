@@ -1,5 +1,4 @@
 interface LfoOptions {
-  ctx: AudioContext;
   depth: number;
   speed: number;
   type?: OscillatorType;
@@ -15,19 +14,19 @@ class LFO {
   private _constant: ConstantSourceNode | undefined;
   private _offsetGain: GainNode | undefined;
 
-  constructor(opts: LfoOptions) {
-    this._ctx = opts.ctx;
-    this._osc = new OscillatorNode(opts.ctx, {
+  constructor(ctx: AudioContext, opts: LfoOptions) {
+    this._ctx = ctx;
+    this._osc = new OscillatorNode(ctx, {
       frequency: opts.speed,
       type: opts.type ?? "sine",
     });
 
-    this._gain = new GainNode(opts.ctx, { gain: opts.depth });
-    this._filter = new BiquadFilterNode(opts.ctx, { frequency: 25 });
+    this._gain = new GainNode(ctx, { gain: opts.depth });
+    this._filter = new BiquadFilterNode(ctx, { frequency: 25 });
 
     if (opts.normalize) {
-      this._constant = new ConstantSourceNode(opts.ctx);
-      this._offsetGain = new GainNode(opts.ctx, { gain: 0.5 });
+      this._constant = new ConstantSourceNode(ctx, { offset: 1 });
+      this._offsetGain = new GainNode(ctx, { gain: 0.5 });
     }
   }
 
@@ -49,7 +48,6 @@ class LFO {
 
   start(startTime?: number) {
     const phaseOffset = 1 / this._osc.frequency.value / 2;
-    console.log("lfo starting", phaseOffset);
     this._constant?.start((startTime ?? 0) + phaseOffset);
     this._osc.start((startTime ?? 0) + phaseOffset);
     this._paused = false;
@@ -65,9 +63,12 @@ class LFO {
     this._gain.gain.linearRampToValueAtTime(n, this._ctx.currentTime + 1);
   }
 
-  disconnect() {
-    console.log("lfo disconnecting");
+  stop(when?: number) {
+    this._osc.stop(when);
+    this._constant?.stop(when);
+  }
 
+  disconnect() {
     this._osc.disconnect();
     this._gain.disconnect();
     this._filter.disconnect();
@@ -81,3 +82,4 @@ class LFO {
 }
 
 export default LFO;
+export { type LfoOptions };

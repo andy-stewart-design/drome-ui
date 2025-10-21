@@ -42,7 +42,7 @@ export default class Synth extends Instrument<number> {
             noteDuration
           );
           const filterNodes = this.createFilters(noteStart, noteDuration);
-          this.applyLFOs(this);
+          // this.applyLFOs(this);
 
           const nodes = [osc, gainNode, ...filterNodes, this.connectChain()];
           nodes.forEach((node, i) => {
