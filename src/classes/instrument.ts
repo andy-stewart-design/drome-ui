@@ -1,24 +1,19 @@
 import { type AdsrEnvelope, type AdsrMode } from "../utils/adsr";
 import LFO, { type LfoOptions } from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
-// import type Sample from "./sample";
-// import type Synth from "./synth";
 import type Drome from "./drome";
 
-// const filterTypes = ["bandpass", "highpass", "lowpass"] as const;
 type InstrumentType = "synth" | "sample";
 type FilterType = "bandpass" | "highpass" | "lowpass";
-type LfoableParam = "detune" | BiquadFilterType;
+type LfoableParam = "detune" | FilterType;
 type Nullable<T> = T | null | undefined;
 type Note<T> = Nullable<T>;
 type Chord<T> = Note<T>[];
 type Cycle<T> = Nullable<Chord<T>>[];
 
 interface FilterOptions {
-  // type: FilterType;
-  frequency: number;
-  // q: number;
   node: BiquadFilterNode;
+  frequency: number;
   env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
@@ -41,7 +36,7 @@ abstract class Instrument<T> {
   protected _startTime: number | undefined;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
-  protected _filterMap: Map<BiquadFilterType, FilterOptions>;
+  protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<LfoableParam, LfoOptions>;
   protected readonly _lfoNodes: Set<LFO>;
   private _isConnected = false;
@@ -61,13 +56,49 @@ abstract class Instrument<T> {
     this._filterMap = new Map();
     this._lfoMap = new Map();
     this._lfoNodes = new Set();
-
+    // Method Aliases
     this.rev = this.reverse.bind(this);
   }
 
   private createFilter(type: FilterType, frequency: number, q?: number) {
     const node = new BiquadFilterNode(this.ctx, { type, frequency, Q: q ?? 1 });
     this._filterMap.set(type, { node, frequency, env: undefined });
+  }
+
+  private getFilterNodes(startTime: number, duration: number) {
+    return Array.from(this._filterMap.entries()).map(([type, filter]) => {
+      const lfoOpts = this._lfoMap.get(type);
+
+      if (lfoOpts && this._lfoNodes.size === 0) {
+        const lfo = new LFO(this.ctx, {
+          ...lfoOpts,
+          bpm: this._drome.beatsPerMin,
+        });
+        lfo.connect(filter.node.frequency);
+        lfo.start();
+        this._lfoNodes.add(lfo);
+      } else if (filter.env) {
+        const envTimes = getAdsrTimes({
+          a: filter.env.adsr.a,
+          d: filter.env.adsr.d,
+          r: filter.env.adsr.r,
+          duration: duration - 0.01,
+          mode: this._adsrMode,
+        });
+
+        applyAdsr({
+          target: filter.node.frequency,
+          startTime,
+          startValue: filter.frequency,
+          envTimes,
+          maxValue: filter.frequency * filter.env.depth,
+          sustainValue: filter.frequency * filter.env.adsr.s,
+          endValue: 30,
+        });
+      }
+
+      return filter.node;
+    });
   }
 
   protected applyGainAdsr(target: AudioParam, start: number, dur: number) {
@@ -91,41 +122,7 @@ abstract class Instrument<T> {
   }
 
   protected connectChain(startTime: number, duration: number) {
-    const filterNodes = Array.from(this._filterMap.entries()).map(
-      ([type, opts]) => {
-        const lfoOpts = this._lfoMap.get(type);
-
-        if (lfoOpts && this._lfoNodes.size === 0) {
-          const lfo = new LFO(this.ctx, {
-            ...lfoOpts,
-            bpm: this._drome.beatsPerMin,
-          });
-          lfo.connect(opts.node.frequency);
-          lfo.start();
-          this._lfoNodes.add(lfo);
-        } else if (opts.env) {
-          const envTimes = getAdsrTimes({
-            a: opts.env.adsr.a,
-            d: opts.env.adsr.d,
-            r: opts.env.adsr.r,
-            duration: duration - 0.01,
-            mode: this._adsrMode,
-          });
-
-          applyAdsr({
-            target: opts.node.frequency,
-            startTime,
-            startValue: opts.frequency,
-            envTimes,
-            maxValue: opts.frequency * opts.env.depth,
-            sustainValue: opts.frequency * opts.env.adsr.s,
-            endValue: 30,
-          });
-        }
-
-        return opts.node;
-      }
-    );
+    const filterNodes = this.getFilterNodes(startTime, duration);
 
     if (!this._isConnected) {
       const nodes = [...filterNodes, this._destination];
