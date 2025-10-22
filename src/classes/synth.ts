@@ -41,10 +41,9 @@ export default class Synth extends Instrument<number> {
             noteStart,
             noteDuration
           );
-          const filterNodes = this.createFilters(noteStart, noteDuration);
-          // this.applyLFOs(this);
 
-          const nodes = [osc, gainNode, ...filterNodes, this.connectChain()];
+          const destination = this.connectChain(noteStart, noteDuration);
+          const nodes = [osc, gainNode, destination];
           nodes.forEach((node, i) => {
             const nextNode = nodes[i + 1];
             if (nextNode) node.connect(nextNode);
@@ -58,13 +57,6 @@ export default class Synth extends Instrument<number> {
             this._audioNodes.delete(osc);
             gainNode.disconnect();
             this._gainNodes.delete(gainNode);
-            // cleanup after delay to prevent popping
-            setTimeout(() => {
-              filterNodes.forEach((node) => {
-                node.disconnect();
-                this._filterNodes.delete(node);
-              });
-            }, 100);
             osc.removeEventListener("ended", cleanup);
           };
 

@@ -1,6 +1,7 @@
 interface LfoOptions {
   depth: number;
   speed: number;
+  bpm: number;
   type?: OscillatorType;
   normalize?: boolean;
 }
@@ -16,8 +17,10 @@ class LFO {
 
   constructor(ctx: AudioContext, opts: LfoOptions) {
     this._ctx = ctx;
+
+    const frequency = (opts.speed * opts.bpm) / 240;
     this._osc = new OscillatorNode(ctx, {
-      frequency: opts.speed,
+      frequency,
       type: opts.type ?? "sine",
     });
 

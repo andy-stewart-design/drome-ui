@@ -90,6 +90,10 @@ class Drome {
   get barDuration() {
     return this.clock.barDuration;
   }
+
+  get beatsPerMin() {
+    return this.clock.beatsPerMin;
+  }
 }
 
 export default Drome;

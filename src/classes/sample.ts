@@ -145,13 +145,9 @@ export default class Sample extends Instrument<number> {
             noteStart,
             this._cut ? noteDuration : chopDuration
           );
-          const filterNodes = this.createFilters(
-            noteStart,
-            this._cut ? noteDuration : chopDuration
-          );
-          // this.applyLFOs(this);
 
-          const nodes = [src, gainNode, ...filterNodes, this.connectChain()];
+          const destination = this.connectChain(noteStart, noteDuration);
+          const nodes = [src, gainNode, destination];
           nodes.forEach((node, i) => {
             const nextNode = nodes[i + 1];
             if (nextNode) node.connect(nextNode);
@@ -165,13 +161,6 @@ export default class Sample extends Instrument<number> {
             this._audioNodes.delete(src);
             gainNode.disconnect();
             this._gainNodes.delete(gainNode);
-            // cleanup after delay to prevent popping
-            setTimeout(() => {
-              filterNodes.forEach((node) => {
-                node.disconnect();
-                this._filterNodes.delete(node);
-              });
-            }, 100);
             src.removeEventListener("ended", cleanup);
           };
 
