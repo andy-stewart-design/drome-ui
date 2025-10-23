@@ -4,14 +4,17 @@ const d = new Drome(140);
 
 const note = 48;
 
-const lfo = d.lfo(1000, 600, 0.5);
+const lfo = d.lfo(1000, 600, 0.25);
 d.synth("sawtooth")
   .lpf(lfo)
+  .adsrMode("fit")
+  .att(0.001)
+  .rel(0.001)
   // .lplfo(600, 0.5, "sine")
   // .dec(0.25)
   // .bpenv(3, 0.5, 0.5, 1, 0.1)
-  // .note([note]);
-  .note([note, note + 4, note, note + 4]);
+  .note([note]);
+// .note([note, note + 4, note, note + 4]);
 // .gain(0.3);
 // .note([note]);
 

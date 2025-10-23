@@ -60,9 +60,12 @@ abstract class Instrument<T> {
     this._lfoMap = new Map();
   }
 
-  private createFilter(type: FilterType, frequency: number, q?: number) {
+  private createFilter(type: FilterType, valueOrLfo: number | LFO, q?: number) {
+    const argIsLfo = valueOrLfo instanceof LFO;
+    const frequency = argIsLfo ? valueOrLfo.value : valueOrLfo;
     const node = new BiquadFilterNode(this.ctx, { type, frequency, Q: q ?? 1 });
     this._filterMap.set(type, { node, frequency, env: undefined });
+    if (argIsLfo) this._lfoMap.set("lowpass", valueOrLfo);
   }
 
   private createLfo(
@@ -212,8 +215,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  bpf(frequency: number, q?: number) {
-    this.createFilter("bandpass", frequency, q);
+  bpf(valueOrLfo: number | LFO, q?: number) {
+    this.createFilter("bandpass", valueOrLfo, q);
     return this;
   }
 
@@ -230,8 +233,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hpf(frequency: number, q?: number) {
-    this.createFilter("highpass", frequency, q);
+  hpf(valueOrLfo: number | LFO, q?: number) {
+    this.createFilter("highpass", valueOrLfo, q);
     return this;
   }
 
@@ -249,12 +252,7 @@ abstract class Instrument<T> {
   }
 
   lpf(valueOrLfo: number | LFO, q?: number) {
-    if (valueOrLfo instanceof LFO) {
-      this.createFilter("lowpass", valueOrLfo.value, q);
-      this._lfoMap.set("lowpass", valueOrLfo);
-    } else {
-      this.createFilter("lowpass", valueOrLfo, q);
-    }
+    this.createFilter("lowpass", valueOrLfo, q);
     return this;
   }
 
