@@ -65,7 +65,7 @@ abstract class Instrument<T> {
     const frequency = argIsLfo ? valueOrLfo.value : valueOrLfo;
     const node = new BiquadFilterNode(this.ctx, { type, frequency, Q: q ?? 1 });
     this._filterMap.set(type, { node, frequency, env: undefined });
-    if (argIsLfo) this._lfoMap.set("lowpass", valueOrLfo);
+    if (argIsLfo) this._lfoMap.set(type, valueOrLfo);
   }
 
   private createLfo(
@@ -92,6 +92,7 @@ abstract class Instrument<T> {
   private getFilterNodes(startTime: number, duration: number) {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
       const lfo = this._lfoMap.get(type);
+      console.log(lfo);
 
       if (lfo && lfo.paused) {
         lfo.create().connect(filter.node.frequency).start();

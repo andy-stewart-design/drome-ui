@@ -1,10 +1,11 @@
 import Drome from "./classes/drome";
 
-const d = new Drome(140);
+const d = new Drome(160);
 
 const note = 48;
 
-const lfo = d.lfo(1000, 600, 0.25);
+const lfo = d.lfo(800, 600, 4).type("square");
+
 d.synth("sawtooth")
   .lpf(lfo)
   .adsrMode("fit")
@@ -23,7 +24,7 @@ d.synth("sawtooth")
 //   .lpenv(3, 0, 0.75, 0.375, 0.01)
 //   .note([note, note, note, note]);
 
-// d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]).rate(1);
+d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]).rate(1);
 // .adsr(0.01, 0, 1, 0.1)
 // .adsrMode("clip");
 
