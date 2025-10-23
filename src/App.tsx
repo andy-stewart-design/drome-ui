@@ -4,9 +4,10 @@ const d = new Drome(140);
 
 const note = 48;
 
+const lfo = d.lfo(1000, 600, 0.5);
 d.synth("sawtooth")
-  .lpf(1000)
-  .lplfo(600, 0.5, "sine")
+  .lpf(lfo)
+  // .lplfo(600, 0.5, "sine")
   // .dec(0.25)
   // .bpenv(3, 0.5, 0.5, 1, 0.1)
   // .note([note]);

@@ -248,8 +248,13 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpf(frequency: number, q?: number) {
-    this.createFilter("lowpass", frequency, q);
+  lpf(valueOrLfo: number | LFO, q?: number) {
+    if (valueOrLfo instanceof LFO) {
+      this.createFilter("lowpass", valueOrLfo.value, q);
+      this._lfoMap.set("lowpass", valueOrLfo);
+    } else {
+      this.createFilter("lowpass", valueOrLfo, q);
+    }
     return this;
   }
 
