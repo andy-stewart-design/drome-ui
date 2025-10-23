@@ -10,7 +10,7 @@ export default class Synth extends Instrument<number> {
   private _types: OscillatorType[];
 
   constructor(drome: Drome, opts: SynthOptions) {
-    super(drome, { ...opts, gain: 0.375 });
+    super(drome, { ...opts, gain: 0.25 });
     this._types = opts.type?.length ? opts.type : ["sine"];
   }
 

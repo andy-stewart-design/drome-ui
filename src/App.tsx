@@ -1,15 +1,16 @@
 import Drome from "./classes/drome";
 
-const d = new Drome(120);
+const d = new Drome(160);
 
-const note = 40;
+const note = 48;
 
 d.synth("sawtooth")
-  .lpf(600, 10)
-  .lplfo(300, 8, "sine")
+  .lpf(1000)
+  .lplfo(600, 1, "sine")
   // .dec(0.25)
-  // .lpenv(3, 0.5, 0.5, 1, 0.1)
-  .note([[note, note + 4]]);
+  // .bpenv(3, 0.5, 0.5, 1, 0.1)
+  .note([note, note + 4, note, note + 4]);
+// .gain(0.3);
 // .note([note]);
 
 // d.synth("sawtooth", "sine")

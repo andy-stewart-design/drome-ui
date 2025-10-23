@@ -210,6 +210,12 @@ abstract class Instrument<T> {
     return this;
   }
 
+  bplfo(depth: number, speed: number, type?: OscillatorType) {
+    const bpm = this._drome.beatsPerMin;
+    this._lfoMap.set("bandpass", { depth, speed, type, bpm });
+    return this;
+  }
+
   hpf(frequency: number, q?: number) {
     this.createFilter("highpass", frequency, q);
     return this;
@@ -220,6 +226,12 @@ abstract class Instrument<T> {
     const filter = this._filterMap.get("highpass");
     if (filter) filter.env = { depth, adsr };
 
+    return this;
+  }
+
+  hplfo(depth: number, speed: number, type?: OscillatorType) {
+    const bpm = this._drome.beatsPerMin;
+    this._lfoMap.set("highpass", { depth, speed, type, bpm });
     return this;
   }
 
@@ -237,12 +249,8 @@ abstract class Instrument<T> {
   }
 
   lplfo(depth: number, speed: number, type?: OscillatorType) {
-    this._lfoMap.set("lowpass", {
-      depth,
-      speed,
-      type,
-      bpm: this._drome.beatsPerMin,
-    });
+    const bpm = this._drome.beatsPerMin;
+    this._lfoMap.set("lowpass", { depth, speed, type, bpm });
     return this;
   }
 
@@ -279,7 +287,7 @@ abstract class Instrument<T> {
 
       Array.from(this._audioNodes).forEach((node, i) => {
         if (i === 0) node.addEventListener("ended", handleEnded);
-        node.stop(stopTime + relTime + 0.1);
+        node.stop(stopTime + relTime);
       });
     }
   }

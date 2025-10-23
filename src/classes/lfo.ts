@@ -2,12 +2,14 @@ interface LfoOptions {
   depth: number;
   speed: number;
   bpm: number;
+  value?: number;
   type?: OscillatorType;
   normalize?: boolean;
 }
 
 class LFO {
   private _ctx: AudioContext;
+  private _value: number;
   private _paused = true;
   private _osc: OscillatorNode;
   private _gain: GainNode;
@@ -17,6 +19,7 @@ class LFO {
 
   constructor(ctx: AudioContext, opts: LfoOptions) {
     this._ctx = ctx;
+    this._value = opts.value ?? 1;
 
     const frequency = (opts.speed * opts.bpm) / 240;
     this._osc = new OscillatorNode(ctx, {
@@ -81,6 +84,10 @@ class LFO {
 
   get paused() {
     return this._paused;
+  }
+
+  get value() {
+    return this._value;
   }
 }
 

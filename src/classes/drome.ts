@@ -1,4 +1,5 @@
 import AudioClock from "./audio-clock";
+import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
 
@@ -69,6 +70,11 @@ class Drome {
     });
     this.instruments.push(sample);
     return sample;
+  }
+
+  lfo(value: number, depth: number, speed: number) {
+    const bpm = this.beatsPerMin;
+    return new LFO(this.ctx, { value, depth, speed, bpm });
   }
 
   get ctx() {
