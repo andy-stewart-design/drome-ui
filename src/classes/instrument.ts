@@ -1,5 +1,5 @@
 import { type AdsrEnvelope, type AdsrMode } from "../utils/adsr";
-import LFO, { type LfoOptions } from "./lfo";
+import LFO from "./lfo-2";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
 
@@ -37,8 +37,7 @@ abstract class Instrument<T> {
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
-  protected _lfoMap: Map<LfoableParam, LfoOptions>;
-  protected readonly _lfoNodes: Set<LFO>;
+  protected _lfoMap: Map<LfoableParam, LFO>;
   private _isConnected = false;
 
   // Method Aliases
@@ -54,10 +53,11 @@ abstract class Instrument<T> {
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
-    this._lfoMap = new Map();
-    this._lfoNodes = new Set();
+
     // Method Aliases
     this.rev = this.reverse.bind(this);
+
+    this._lfoMap = new Map();
   }
 
   private createFilter(type: FilterType, frequency: number, q?: number) {
@@ -65,18 +65,33 @@ abstract class Instrument<T> {
     this._filterMap.set(type, { node, frequency, env: undefined });
   }
 
+  private createLfo(
+    filType: FilterType,
+    depth: number,
+    speed: number,
+    oscType?: OscillatorType
+  ) {
+    const bpm = this._drome.beatsPerMin;
+    const value = this._filterMap.get(filType)?.frequency;
+
+    if (!value) {
+      const msg = `[DROME]: Must create a ${filType} filter before applying an lfo`;
+      console.warn(msg);
+      return this;
+    }
+
+    this._lfoMap.set(
+      filType,
+      new LFO(this.ctx, { depth, speed, type: oscType, bpm, value })
+    );
+  }
+
   private getFilterNodes(startTime: number, duration: number) {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
-      const lfoOpts = this._lfoMap.get(type);
+      const lfo = this._lfoMap.get(type);
 
-      if (lfoOpts && this._lfoNodes.size === 0) {
-        const lfo = new LFO(this.ctx, {
-          ...lfoOpts,
-          bpm: this._drome.beatsPerMin,
-        });
-        lfo.connect(filter.node.frequency);
-        lfo.start();
-        this._lfoNodes.add(lfo);
+      if (lfo && lfo.paused) {
+        lfo.create().connect(filter.node.frequency).start();
       } else if (filter.env) {
         const envTimes = getAdsrTimes({
           a: filter.env.adsr.a,
@@ -211,8 +226,7 @@ abstract class Instrument<T> {
   }
 
   bplfo(depth: number, speed: number, type?: OscillatorType) {
-    const bpm = this._drome.beatsPerMin;
-    this._lfoMap.set("bandpass", { depth, speed, type, bpm });
+    this.createLfo("bandpass", depth, speed, type);
     return this;
   }
 
@@ -230,8 +244,7 @@ abstract class Instrument<T> {
   }
 
   hplfo(depth: number, speed: number, type?: OscillatorType) {
-    const bpm = this._drome.beatsPerMin;
-    this._lfoMap.set("highpass", { depth, speed, type, bpm });
+    this.createLfo("highpass", depth, speed, type);
     return this;
   }
 
@@ -249,8 +262,7 @@ abstract class Instrument<T> {
   }
 
   lplfo(depth: number, speed: number, type?: OscillatorType) {
-    const bpm = this._drome.beatsPerMin;
-    this._lfoMap.set("lowpass", { depth, speed, type, bpm });
+    this.createLfo("lowpass", depth, speed, type);
     return this;
   }
 
@@ -298,13 +310,12 @@ abstract class Instrument<T> {
       this._gainNodes.clear();
       this._audioNodes.forEach((node) => node.disconnect());
       this._audioNodes.clear();
-      this._lfoNodes.forEach((node) => {
-        node.stop();
-        node.disconnect();
+      this._lfoMap.forEach((lfo) => {
+        lfo.stop();
+        lfo.disconnect();
       });
-      this._lfoNodes.clear();
       this._isConnected = false;
-    }, 50);
+    }, 100);
   }
 
   get ctx() {
