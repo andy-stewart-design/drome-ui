@@ -2,11 +2,11 @@ import Instrument, { type InstrumentOptions } from "./instrument";
 import { midiToFrequency } from "../utils/midi-to-frequency";
 import type Drome from "./drome";
 
-interface SynthOptions extends InstrumentOptions<number> {
+interface SynthOptions extends InstrumentOptions<number | number[]> {
   type?: OscillatorType[];
 }
 
-export default class Synth extends Instrument<number> {
+export default class Synth extends Instrument<number | number[]> {
   private _types: OscillatorType[];
 
   constructor(drome: Drome, opts: SynthOptions) {
@@ -15,20 +15,12 @@ export default class Synth extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { cycle, cycleIndex, noteDuration } = this.beforePlay(
-      barStart,
-      barDuration
-    );
+    const { cycle, noteDuration } = this.beforePlay(barStart, barDuration);
 
     this._types.forEach((type) => {
       cycle.forEach((midiChord, chordIndex) => {
-        midiChord?.forEach((midiNote) => {
+        [midiChord].flat().forEach((midiNote) => {
           if (!midiNote) return;
-
-          console.log(
-            "current test value:",
-            this._testArray.noteAt(cycleIndex, chordIndex)
-          );
 
           const osc = new OscillatorNode(this.ctx, {
             frequency: midiToFrequency(midiNote),

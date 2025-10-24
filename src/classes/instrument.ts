@@ -3,8 +3,7 @@ import LFO, { type LfoOptions } from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
 import type {
-  Chord,
-  Cycle,
+  Nullable,
   InstrumentType,
   AdsrEnvelope,
   AdsrMode,
@@ -15,7 +14,7 @@ import type {
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
-  defaultCycle?: Cycle<T>[];
+  defaultCycle?: Nullable<T>[][];
   baseGain?: number;
   adsr?: AdsrEnvelope;
 }
@@ -37,8 +36,6 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<LfoableParam, LFO>;
   private _isConnected = false;
 
-  protected _testArray: DromeArray<number>;
-
   // Method Aliases
   rev: () => this;
 
@@ -54,7 +51,6 @@ abstract class Instrument<T> {
     this._gainNodes = new Set();
     this._filterMap = new Map();
     this._lfoMap = new Map();
-    this._testArray = new DromeArray([[[1], [0]]]);
 
     // Method Aliases
     this.rev = this.reverse.bind(this);
@@ -149,8 +145,13 @@ abstract class Instrument<T> {
     return this._connectorNode;
   }
 
-  note(...input: (T | Chord<T> | Cycle<T>)[]) {
+  note(...input: (Nullable<T> | Nullable<T>[])[]) {
     this._cycles.note(...input);
+    return this;
+  }
+
+  euclid(pulses: number | number[], steps: number, rotation = 0) {
+    this._cycles.euclid(pulses, steps, rotation);
     return this;
   }
 

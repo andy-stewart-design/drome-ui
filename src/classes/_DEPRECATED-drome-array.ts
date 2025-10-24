@@ -1,22 +1,25 @@
-import type { Nullable } from "../types";
+import type { Chord, Cycle } from "../types";
 
-type DromeArrayValue<T> = Nullable<T>[][];
+const isArray = Array.isArray;
 
 class DromeArray<T> {
-  protected _value: DromeArrayValue<T> = [];
-  protected _defaultValue: DromeArrayValue<T>;
+  protected _value: Cycle<T>[] = [];
+  protected _defaultValue: Cycle<T>[];
 
-  constructor(defaultValue: DromeArrayValue<T>) {
+  constructor(defaultValue: Cycle<T>[]) {
     this._defaultValue = defaultValue;
   }
 
   /* ----------------------------------------------------------------
   /* PATTERN SETTERS
   ---------------------------------------------------------------- */
-  note(...input: (Nullable<T> | Nullable<T>[])[]) {
+  note(...input: (T | Chord<T> | Cycle<T>)[]) {
     this._value = input.map((cycle) =>
-      Array.isArray(cycle) ? cycle : [cycle]
+      isArray(cycle)
+        ? cycle.map((chord) => (isArray(chord) ? chord : [chord]))
+        : [[cycle]]
     );
+
     return this;
   }
 
@@ -24,27 +27,33 @@ class DromeArray<T> {
     this._value = this._value
       .slice()
       .reverse()
-      .map((arr) => arr?.slice().reverse());
+      .map((arr) => arr.slice().reverse());
     return this;
   }
 
-  set defaultValue(value: DromeArrayValue<T>) {
+  set defaultValue(value: Cycle<T>[]) {
     this._defaultValue = value;
   }
 
-  set value(value: DromeArrayValue<T>) {
+  set value(value: Cycle<T>[]) {
     this._value = value;
   }
 
   /* ----------------------------------------------------------------
   /* GETTERS
   ---------------------------------------------------------------- */
-  at(i: number): Nullable<T>[];
-  at(i: number, j: number): Nullable<T>;
-  at(i: number, j?: number) {
-    const value = this.value.length ? this._value : this._defaultValue;
-    if (typeof j === "number") return value[i][j];
-    else return value[i];
+  at(i: number) {
+    return this._value[i];
+  }
+
+  chordAt(cycleIndex: number, chordIndex: number) {
+    const value = this._value.length ? this.value : this._defaultValue;
+    const cycle = value[cycleIndex];
+    return cycle[chordIndex % cycle.length];
+  }
+
+  noteAt(cycleIndex: number, chordIndex: number) {
+    return this.chordAt(cycleIndex, chordIndex)?.[0];
   }
 
   get length() {

@@ -14,7 +14,8 @@ d.synth("sawtooth")
   // .lplfo(600, 0.5, "sine")
   // .dec(0.25)
   // .gain(0.1)
-  .note([note, note, note, note]);
+  .note([note, note - 12, note])
+  .euclid(3, 8);
 // .note([note, note + 4, note, note + 4]);
 // .gain(0.3);
 // .note([note]);

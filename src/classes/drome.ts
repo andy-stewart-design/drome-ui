@@ -66,7 +66,7 @@ class Drome {
     const sample = new Sample(this, {
       destination: this.audioChannels[1],
       sampleIds: sampleIds,
-      defaultCycle: [[[0]]],
+      defaultCycle: [[0]],
     });
     this.instruments.push(sample);
     return sample;

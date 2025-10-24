@@ -28,9 +28,7 @@ interface FilterOptions {
 
 type LfoableParam = "detune" | FilterType;
 
-type Note<T> = Nullable<T>;
-type Chord<T> = Note<T>[];
-type Cycle<T> = Nullable<Chord<T>>[];
+type DromeArrayValue<T> = Nullable<T>[][];
 
 export type {
   Nullable,
@@ -43,7 +41,5 @@ export type {
   FilterType,
   FilterOptions,
   LfoableParam,
-  Note,
-  Chord,
-  Cycle,
+  DromeArrayValue,
 };
