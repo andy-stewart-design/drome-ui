@@ -71,13 +71,16 @@ export default class Sample extends Instrument<number> {
       // const step = Math.min(1 / numChops, 1 / this._cycles.length);
       const step = 1 / (chopsPerCycle * this._cycles.length);
 
-      this._cycles = Array.from({ length: this._cycles.length }, (_, i) => {
-        return Array.from({ length: chopsPerCycle }, (_, j) => {
-          return [step * j + chopsPerCycle * step * i];
-        });
-      });
+      this._cycles.value = Array.from(
+        { length: this._cycles.length },
+        (_, i) => {
+          return Array.from({ length: chopsPerCycle }, (_, j) => {
+            return [step * j + chopsPerCycle * step * i];
+          });
+        }
+      );
     } else {
-      this._cycles = input.map((cycle) =>
+      this._cycles.value = input.map((cycle) =>
         isArray(cycle)
           ? cycle.map((chord) =>
               isArray(chord)
@@ -108,10 +111,7 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    super.play(barStart, barDuration);
-    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const cycle = this._cycles[cycleIndex];
-    const noteDuration = barDuration / cycle.length;
+    const { cycle, noteDuration } = this.beforePlay(barStart, barDuration);
 
     this._sampleIds.forEach((sampleId) => {
       cycle.forEach((chopGroup, groupIndex) => {

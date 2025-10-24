@@ -1,11 +1,4 @@
-type AdsrMode = "fit" | "clip" | "free";
-
-interface AdsrEnvelope {
-  a: number;
-  d: number;
-  s: number;
-  r: number;
-}
+import type { AdsrMode } from "../types";
 
 interface getAdsrTimesArgs {
   a: number;
@@ -71,4 +64,4 @@ function applyAdsr({
   target.linearRampToValueAtTime(endValue, startTime + envTimes.r.end);
 }
 
-export { getAdsrTimes, applyAdsr, type AdsrMode, type AdsrEnvelope };
+export { getAdsrTimes, applyAdsr };

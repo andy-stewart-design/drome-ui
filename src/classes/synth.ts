@@ -10,20 +10,25 @@ export default class Synth extends Instrument<number> {
   private _types: OscillatorType[];
 
   constructor(drome: Drome, opts: SynthOptions) {
-    super(drome, { ...opts, gain: 0.25 });
+    super(drome, { ...opts, baseGain: 0.25 });
     this._types = opts.type?.length ? opts.type : ["sine"];
   }
 
   play(barStart: number, barDuration: number) {
-    super.play(barStart, barDuration);
-    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const cycle = this._cycles[cycleIndex];
-    const noteDuration = barDuration / cycle.length;
+    const { cycle, cycleIndex, noteDuration } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._types.forEach((type) => {
       cycle.forEach((midiChord, chordIndex) => {
         midiChord?.forEach((midiNote) => {
           if (!midiNote) return;
+
+          console.log(
+            "current test value:",
+            this._testArray.noteAt(cycleIndex, chordIndex)
+          );
 
           const osc = new OscillatorNode(this.ctx, {
             frequency: midiToFrequency(midiNote),
@@ -32,7 +37,9 @@ export default class Synth extends Instrument<number> {
           });
           this._audioNodes.add(osc);
 
-          const gainNode = new GainNode(this.ctx);
+          const gainNode = new GainNode(this.ctx, {
+            gain: this._gain * this._baseGain,
+          });
           this._gainNodes.add(gainNode);
 
           const noteStart = barStart + chordIndex * noteDuration;

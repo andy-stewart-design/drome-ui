@@ -1,26 +1,22 @@
-import { type AdsrEnvelope, type AdsrMode } from "../utils/adsr";
-import LFO from "./lfo";
+import DromeArray from "./drome-array";
+import LFO, { type LfoOptions } from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
-
-type InstrumentType = "synth" | "sample";
-type FilterType = "bandpass" | "highpass" | "lowpass";
-type LfoableParam = "detune" | FilterType;
-type Nullable<T> = T | null | undefined;
-type Note<T> = Nullable<T>;
-type Chord<T> = Note<T>[];
-type Cycle<T> = Nullable<Chord<T>>[];
-
-interface FilterOptions {
-  node: BiquadFilterNode;
-  frequency: number;
-  env: { depth: number; adsr: AdsrEnvelope } | undefined;
-}
+import type {
+  Chord,
+  Cycle,
+  InstrumentType,
+  AdsrEnvelope,
+  AdsrMode,
+  FilterType,
+  FilterOptions,
+  LfoableParam,
+} from "../types";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
   defaultCycle?: Cycle<T>[];
-  gain?: number;
+  baseGain?: number;
   adsr?: AdsrEnvelope;
 }
 
@@ -28,8 +24,9 @@ abstract class Instrument<T> {
   protected _drome: Drome;
   protected _destination: AudioNode;
   protected _connectorNode: AudioNode;
-  protected _cycles: Cycle<T>[];
+  protected _cycles: DromeArray<T>;
   protected _gain: number;
+  protected _baseGain: number;
   protected _adsr: AdsrEnvelope;
   protected _adsrMode: AdsrMode = "fit";
   protected _detune: number = 0;
@@ -40,59 +37,53 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<LfoableParam, LFO>;
   private _isConnected = false;
 
+  protected _testArray: DromeArray<number>;
+
   // Method Aliases
   rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
-    this._cycles = opts.defaultCycle || [];
+    this._cycles = new DromeArray(opts.defaultCycle ?? []);
     this._destination = opts.destination;
     this._connectorNode = opts.destination;
-    this._gain = opts.gain || 0.75;
+    this._gain = 1;
+    this._baseGain = opts.baseGain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
+    this._lfoMap = new Map();
+    this._testArray = new DromeArray([[[1], [0]]]);
 
     // Method Aliases
     this.rev = this.reverse.bind(this);
-
-    this._lfoMap = new Map();
   }
 
   private createFilter(type: FilterType, valueOrLfo: number | LFO, q?: number) {
-    const argIsLfo = valueOrLfo instanceof LFO;
-    const frequency = argIsLfo ? valueOrLfo.value : valueOrLfo;
+    const frequency = valueOrLfo instanceof LFO ? valueOrLfo.value : valueOrLfo;
     const node = new BiquadFilterNode(this.ctx, { type, frequency, Q: q ?? 1 });
+
     this._filterMap.set(type, { node, frequency, env: undefined });
-    if (argIsLfo) this._lfoMap.set(type, valueOrLfo);
+    if (valueOrLfo instanceof LFO) this._lfoMap.set(type, valueOrLfo);
   }
 
-  private createLfo(
-    filType: FilterType,
-    depth: number,
-    speed: number,
-    oscType?: OscillatorType
-  ) {
+  private createLfo(type: FilterType, opts: Omit<LfoOptions, "bpm" | "value">) {
     const bpm = this._drome.beatsPerMin;
-    const value = this._filterMap.get(filType)?.frequency;
+    const value = this._filterMap.get(type)?.frequency;
 
     if (!value) {
-      const msg = `[DROME]: Must create a ${filType} filter before applying an lfo`;
+      const msg = `[DROME]: Must create a ${type} filter before applying an lfo`;
       console.warn(msg);
       return this;
     }
 
-    this._lfoMap.set(
-      filType,
-      new LFO(this.ctx, { depth, speed, type: oscType, bpm, value })
-    );
+    this._lfoMap.set(type, new LFO(this.ctx, { bpm, value, ...opts }));
   }
 
   private getFilterNodes(startTime: number, duration: number) {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
       const lfo = this._lfoMap.get(type);
-      console.log(lfo);
 
       if (lfo && lfo.paused) {
         lfo.create().connect(filter.node.frequency).start();
@@ -133,8 +124,8 @@ abstract class Instrument<T> {
       target,
       startTime: start,
       envTimes,
-      maxValue: this._gain,
-      sustainValue: this._adsr.s * this._gain,
+      maxValue: this._gain * this._baseGain,
+      sustainValue: this._adsr.s * this._gain * this._baseGain,
     });
 
     return envTimes.r.end;
@@ -159,22 +150,12 @@ abstract class Instrument<T> {
   }
 
   note(...input: (T | Chord<T> | Cycle<T>)[]) {
-    const isArray = Array.isArray;
-
-    this._cycles = input.map((cycle) =>
-      isArray(cycle)
-        ? cycle.map((chord) => (isArray(chord) ? chord : [chord]))
-        : [[cycle]]
-    );
-
+    this._cycles.note(...input);
     return this;
   }
 
   reverse() {
-    this._cycles = this._cycles
-      .slice()
-      .reverse()
-      .map((arr) => arr.slice().reverse());
+    this._cycles.reverse();
     return this;
   }
 
@@ -230,7 +211,7 @@ abstract class Instrument<T> {
   }
 
   bplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("bandpass", depth, speed, type);
+    this.createLfo("bandpass", { depth, speed, type });
     return this;
   }
 
@@ -248,7 +229,7 @@ abstract class Instrument<T> {
   }
 
   hplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("highpass", depth, speed, type);
+    this.createLfo("highpass", { depth, speed, type });
     return this;
   }
 
@@ -266,7 +247,7 @@ abstract class Instrument<T> {
   }
 
   lplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("lowpass", depth, speed, type);
+    this.createLfo("lowpass", { depth, speed, type });
     return this;
   }
 
@@ -276,9 +257,12 @@ abstract class Instrument<T> {
     return this;
   }
 
-  play(barStart: number, barDuration: number): void;
-  play(barStart: number) {
+  beforePlay(barStart: number, barDuration: number) {
     this._startTime = barStart;
+    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
+    const cycle = this._cycles.at(cycleIndex);
+    const noteDuration = barDuration / cycle.length;
+    return { cycle, cycleIndex, noteDuration };
   }
 
   stop(when?: number) {
