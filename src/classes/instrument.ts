@@ -1,5 +1,5 @@
 import { type AdsrEnvelope, type AdsrMode } from "../utils/adsr";
-import LFO from "./lfo-2";
+import LFO from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
 

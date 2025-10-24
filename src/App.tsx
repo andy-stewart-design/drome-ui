@@ -4,7 +4,7 @@ const d = new Drome(160);
 
 const note = 48;
 
-const lfo = d.lfo(800, 600, 4).type("square");
+const lfo = d.lfo(800, 600, 16).type("square");
 
 d.synth("sawtooth")
   .lpf(lfo)

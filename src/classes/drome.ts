@@ -1,5 +1,5 @@
 import AudioClock from "./audio-clock";
-import LFO from "./lfo-2";
+import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
 

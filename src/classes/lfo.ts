@@ -1,85 +1,131 @@
 interface LfoOptions {
+  value: number;
   depth: number;
   speed: number;
   bpm: number;
-  value?: number;
   type?: OscillatorType;
-  normalize?: boolean;
 }
 
 class LFO {
   private _ctx: AudioContext;
   private _value: number;
+  private _depth: number;
+  private _speed: number;
+  private _bpm: number;
+  private _type: OscillatorType;
   private _paused = true;
-  private _osc: OscillatorNode;
-  private _gain: GainNode;
-  private _filter: BiquadFilterNode;
-  private _constant: ConstantSourceNode | undefined;
-  private _offsetGain: GainNode | undefined;
+  private _osc: OscillatorNode | null = null;
+  private _gain: GainNode | null = null;
+  private _filter: BiquadFilterNode | null = null;
 
   constructor(ctx: AudioContext, opts: LfoOptions) {
     this._ctx = ctx;
-    this._value = opts.value ?? 1;
+    this._value = opts.value;
+    this._depth = opts.depth;
+    this._speed = opts.speed;
+    this._bpm = opts.bpm;
+    this._type = opts.type ?? "sine";
+  }
 
-    const frequency = (opts.speed * opts.bpm) / 240;
-    this._osc = new OscillatorNode(ctx, {
+  create() {
+    const frequency = (this._speed * this._bpm) / 240;
+    this._osc = new OscillatorNode(this._ctx, {
       frequency,
-      type: opts.type ?? "sine",
+      type: this._type ?? "sine",
     });
 
-    this._gain = new GainNode(ctx, { gain: opts.depth });
-    this._filter = new BiquadFilterNode(ctx, { frequency: 25 });
-
-    if (opts.normalize) {
-      this._constant = new ConstantSourceNode(ctx, { offset: 1 });
-      this._offsetGain = new GainNode(ctx, { gain: 0.5 });
-    }
+    this._gain = new GainNode(this._ctx, { gain: this._depth });
+    this._filter = new BiquadFilterNode(this._ctx, { frequency: 25 });
+    return this;
   }
 
   connect(destination: AudioParam) {
-    if (this._constant && this._offsetGain) {
-      // LFO (-1..1) → scale to -0.5..0.5
-      this._osc
-        .connect(this._filter)
-        .connect(this._gain)
-        .connect(this._offsetGain);
-      // Add +0.5 offset to shift range to 0..1
-      this._constant.connect(this._offsetGain);
-      // Send combined signal to destination
-      this._offsetGain.connect(destination);
-    } else {
-      this._osc.connect(this._filter).connect(this._gain).connect(destination);
+    if (!this._osc || !this._filter || !this._gain) {
+      console.warn("[LFO] Must call create() before calling start()");
+      return this;
     }
+    this._osc.connect(this._filter).connect(this._gain).connect(destination);
+    return this;
   }
 
   start(startTime?: number) {
-    const phaseOffset = 1 / this._osc.frequency.value / 2;
-    this._constant?.start((startTime ?? 0) + phaseOffset);
-    this._osc.start((startTime ?? 0) + phaseOffset);
+    if (!this.paused) return this;
+    if (!this._osc) {
+      console.warn("[LFO] Must call connect() before calling start()");
+      return this;
+    }
+
+    this._osc.start(startTime);
     this._paused = false;
+    return this;
   }
 
-  setSpeed(n: number) {
-    this._osc.frequency.cancelScheduledValues(this._ctx.currentTime);
-    this._osc.frequency.linearRampToValueAtTime(n, this._ctx.currentTime + 1);
+  speed(v: number) {
+    this._speed = v;
+
+    if (this._osc) {
+      const f = (this._speed * this._bpm) / 240;
+      this._osc.frequency.cancelScheduledValues(this._ctx.currentTime);
+      this._osc.frequency.linearRampToValueAtTime(f, this._ctx.currentTime + 1);
+    }
+
+    return this;
   }
 
-  setDepth(n: number) {
-    this._gain.gain.cancelScheduledValues(this._ctx.currentTime);
-    this._gain.gain.linearRampToValueAtTime(n, this._ctx.currentTime + 1);
+  bpm(v: number) {
+    this._bpm = v;
+
+    if (this._osc) {
+      const f = (this._speed * this._bpm) / 240;
+      this._osc.frequency.cancelScheduledValues(this._ctx.currentTime);
+      this._osc.frequency.linearRampToValueAtTime(f, this._ctx.currentTime + 1);
+    }
+
+    return this;
+  }
+
+  depth(v: number) {
+    this._depth = v;
+
+    if (this._gain) {
+      this._gain.gain.cancelScheduledValues(this._ctx.currentTime);
+      this._gain.gain.linearRampToValueAtTime(v, this._ctx.currentTime + 1);
+    }
+
+    return this;
+  }
+
+  type(v: OscillatorType) {
+    this._type = v;
+    return this;
   }
 
   stop(when?: number) {
+    if (this.paused) return this;
+    if (!this._osc) {
+      console.warn("[LFO] Must call connect() before calling start()");
+      return this;
+    }
     this._osc.stop(when);
-    this._constant?.stop(when);
+    this._paused = true;
+    return this;
   }
 
   disconnect() {
+    if (!this._osc || !this._filter || !this._gain) {
+      console.warn("[LFO] Must call connect() before calling disconnect()");
+      return this;
+    }
+
     this._osc.disconnect();
     this._gain.disconnect();
     this._filter.disconnect();
-    this._constant?.disconnect();
-    this._offsetGain?.disconnect();
+    this._osc = null;
+    this._gain = null;
+    this._filter = null;
+    this._paused = true;
+
+    return this;
   }
 
   get paused() {
