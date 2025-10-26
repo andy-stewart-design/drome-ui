@@ -28,6 +28,8 @@ class LFO {
   }
 
   create() {
+    const { _osc, _gain, _filter } = this;
+
     const frequency = (this._speed * this._bpm) / 240;
     this._osc = new OscillatorNode(this._ctx, {
       frequency,
@@ -36,6 +38,16 @@ class LFO {
 
     this._gain = new GainNode(this._ctx, { gain: this._depth });
     this._filter = new BiquadFilterNode(this._ctx, { frequency: 25 });
+
+    _osc?.stop(this._ctx.currentTime + 0.1);
+    const cleanup = () => {
+      _osc?.disconnect();
+      _gain?.disconnect();
+      _filter?.disconnect();
+      _osc?.removeEventListener("ended", cleanup);
+    };
+    _osc?.addEventListener("ended", cleanup);
+
     return this;
   }
 

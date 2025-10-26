@@ -22,18 +22,20 @@ interface InstrumentOptions<T> {
 abstract class Instrument<T> {
   protected _drome: Drome;
   protected _destination: AudioNode;
-  protected _connectorNode: AudioNode;
+  protected _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeArray<T>;
-  protected _gain: number;
+  protected _gain: DromeArray<number>;
   protected _baseGain: number;
   protected _adsr: AdsrEnvelope;
-  protected _adsrMode: AdsrMode = "fit";
-  protected _detune: number = 0;
-  protected _startTime: number | undefined;
+  protected _postgain: DromeArray<number>;
+  protected _postgainNode: GainNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<LfoableParam, LFO>;
+  protected _startTime: number | undefined;
+  protected _adsrMode: AdsrMode = "fit";
+  protected _detune: number = 0;
   private _isConnected = false;
 
   // Method Aliases
@@ -41,12 +43,14 @@ abstract class Instrument<T> {
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
-    this._cycles = new DromeArray(opts.defaultCycle ?? []);
     this._destination = opts.destination;
     this._connectorNode = opts.destination;
-    this._gain = 1;
+    this._cycles = new DromeArray(opts.defaultCycle ?? []);
+    this._gain = new DromeArray([[1]]);
     this._baseGain = opts.baseGain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
+    this._postgain = new DromeArray([[1]]);
+    this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
@@ -54,6 +58,16 @@ abstract class Instrument<T> {
 
     // Method Aliases
     this.rev = this.reverse.bind(this);
+  }
+
+  protected createGain(chordIndex: number) {
+    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
+    const gain = this._gain.at(cycleIndex, chordIndex) ?? 1;
+    const gainNode = new GainNode(this.ctx, {
+      gain: gain * this._baseGain,
+    });
+    this._gainNodes.add(gainNode);
+    return gainNode;
   }
 
   private createFilter(type: FilterType, valueOrLfo: number | LFO, q?: number) {
@@ -82,7 +96,7 @@ abstract class Instrument<T> {
       const lfo = this._lfoMap.get(type);
 
       if (lfo && lfo.paused) {
-        lfo.create().connect(filter.node.frequency).start();
+        lfo.create().connect(filter.node.frequency).start(startTime);
       } else if (filter.env) {
         const envTimes = getAdsrTimes({
           a: filter.env.adsr.a,
@@ -107,7 +121,26 @@ abstract class Instrument<T> {
     });
   }
 
+  private applyPostgain(
+    cycle: Nullable<T>[],
+    cycleIndex: number,
+    startTime: number,
+    duration: number
+  ) {
+    const target = this._postgainNode.gain;
+    const postgainCycle = this._postgain.at(cycleIndex);
+
+    let i = 0;
+    const steps = cycle.map((v) =>
+      !isNullish(v) ? postgainCycle[i++ % postgainCycle.length] : null
+    );
+
+    applySteppedRamp({ target, startTime, duration, steps });
+  }
+
   protected applyGainAdsr(target: AudioParam, start: number, dur: number) {
+    const initialGain = target.value;
+
     const envTimes = getAdsrTimes({
       a: this._adsr.a,
       d: this._adsr.d,
@@ -120,8 +153,8 @@ abstract class Instrument<T> {
       target,
       startTime: start,
       envTimes,
-      maxValue: this._gain * this._baseGain,
-      sustainValue: this._adsr.s * this._gain * this._baseGain,
+      maxValue: initialGain,
+      sustainValue: this._adsr.s * initialGain,
     });
 
     return envTimes.r.end;
@@ -131,7 +164,7 @@ abstract class Instrument<T> {
     const filterNodes = this.getFilterNodes(startTime, duration);
 
     if (!this._isConnected) {
-      const nodes = [...filterNodes, this._destination];
+      const nodes = [...filterNodes, this._postgainNode, this._destination];
 
       nodes.forEach((node, i) => {
         const nextNode = nodes[i + 1];
@@ -160,8 +193,20 @@ abstract class Instrument<T> {
     return this;
   }
 
-  gain(v: number) {
-    this._gain = v;
+  gain(...v: (number | number[])[]) {
+    this._gain.note(...v);
+    return this;
+  }
+
+  postgain(...v: (number | number[])[]) {
+    const firstValue = v.reduce<number>((acc, item) => {
+      if (acc !== 1) return acc;
+      if (typeof item === "number") return item;
+      if (Array.isArray(item) && item.length > 0) return item[0];
+      return acc;
+    }, 1);
+    this._postgainNode.gain.value = firstValue;
+    this._postgain.note(...v);
     return this;
   }
 
@@ -263,6 +308,11 @@ abstract class Instrument<T> {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
     const cycle = this._cycles.at(cycleIndex);
     const noteDuration = barDuration / cycle.length;
+
+    // stop current lfos to make sure that lfo period stays synced with bpm
+    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+    this.applyPostgain(cycle, cycleIndex, barStart, barDuration);
+
     return { cycle, cycleIndex, noteDuration };
   }
 
@@ -303,6 +353,7 @@ abstract class Instrument<T> {
         lfo.stop();
         lfo.disconnect();
       });
+      this._postgainNode.disconnect();
       this._isConnected = false;
     }, 100);
   }
@@ -314,3 +365,32 @@ abstract class Instrument<T> {
 
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
+
+function isNullish(v: unknown) {
+  return v === null || v === undefined;
+}
+
+interface SteppedRampOptions {
+  target: AudioParam;
+  startTime: number;
+  duration: number;
+  steps: Nullable<number>[];
+  fade?: number;
+}
+
+function applySteppedRamp(opts: SteppedRampOptions) {
+  const { target, steps, fade = 0.001, startTime, duration } = opts;
+  const stepLength = (duration - fade * steps.length) / steps.length;
+
+  target.cancelScheduledValues(startTime);
+  target.setValueAtTime(target.value, startTime);
+
+  for (let i = 0; i < steps.length; i++) {
+    const step = steps[i];
+    if (isNullish(step)) continue;
+    const nextIndex = steps.findIndex((v, idx) => idx > i && v !== null);
+    const stepOffset = nextIndex > i ? nextIndex - i : steps.length - i;
+    target.linearRampToValueAtTime(step, startTime + stepLength * i + fade);
+    target.setValueAtTime(step, startTime + stepLength * (i + stepOffset));
+  }
+}

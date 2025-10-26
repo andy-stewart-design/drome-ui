@@ -29,12 +29,8 @@ export default class Synth extends Instrument<number | number[]> {
           });
           this._audioNodes.add(osc);
 
-          const gainNode = new GainNode(this.ctx, {
-            gain: this._gain * this._baseGain,
-          });
-          this._gainNodes.add(gainNode);
-
           const noteStart = barStart + chordIndex * noteDuration;
+          const gainNode = this.createGain(chordIndex);
           const noteEnd = this.applyGainAdsr(
             gainNode.gain,
             noteStart,

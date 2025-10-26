@@ -9,14 +9,15 @@ const lfo = d.lfo(800, 600, 16).type("sine");
 d.synth("sawtooth")
   .att(0.001)
   .rel(0.001)
-  .lpf(400)
+  .lpf(600)
+  // .adsr(0.25, 0.25, 0.1, 0.1)
   // .lpenv(3, 1, 0, 1, 0.1)
   // .lplfo(600, 0.5, "sine")
-  // .dec(0.25)
-  // .gain(0.1)
-  .note([note, note - 12, note])
-  .euclid(3, 8);
-// .note([note, note + 4, note, note + 4]);
+  // .rel(1)
+  .postgain([1, 0.25, 1, 0.25])
+  .note([note, note + 4, note + 7, note + 11]);
+// .note([note]);
+// .euclid(3, 8);
 // .gain(0.3);
 // .note([note]);
 
