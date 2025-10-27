@@ -2,6 +2,8 @@ import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
+import { isNullish, isLfoTuple } from "../utils/validators";
+import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
 import type {
   Nullable,
@@ -42,7 +44,7 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<LfoableParam, LFO>;
   protected _startTime: number | undefined;
   protected _adsrMode: AdsrMode = "fit";
-  protected _detune: number = 0;
+  protected _detune: DromeArray<number> = new DromeArray([[0]]);
   private _isConnected = false;
 
   // Method Aliases
@@ -84,7 +86,44 @@ abstract class Instrument<T> {
     const node = new BiquadFilterNode(this.ctx, { type, frequency });
 
     this._filterMap.set(type, { node, frequencies, env: undefined });
-    if (freqOrLfo instanceof LFO) this._lfoMap.set(type, freqOrLfo);
+    if (isLfo) this._lfoMap.set(type, freqOrLfo);
+  }
+
+  protected applyGain(target: AudioParam, start: number, dur: number) {
+    const initialGain = target.value;
+
+    const envTimes = getAdsrTimes({
+      a: this._adsr.a,
+      d: this._adsr.d,
+      r: this._adsr.r,
+      duration: dur,
+      mode: this._adsrMode,
+    });
+
+    applyAdsr({
+      target,
+      startTime: start,
+      envTimes,
+      maxValue: initialGain,
+      sustainValue: this._adsr.s * initialGain,
+    });
+
+    return envTimes.r.end;
+  }
+
+  protected appplyDetune(
+    node: OscillatorNode | AudioBufferSourceNode,
+    startTime: number,
+    cycleIndex: number,
+    chordIndex: number
+  ) {
+    const lfo = this._lfoMap.get("detune");
+    if (lfo) {
+      if (lfo.paused) lfo.create().connect(node.detune).start(startTime);
+      else lfo.connect(node.detune);
+    } else {
+      node.detune.value = this._detune.at(cycleIndex, chordIndex);
+    }
   }
 
   private applyFilters(
@@ -135,28 +174,6 @@ abstract class Instrument<T> {
 
       return filter.node;
     });
-  }
-
-  protected applyGain(target: AudioParam, start: number, dur: number) {
-    const initialGain = target.value;
-
-    const envTimes = getAdsrTimes({
-      a: this._adsr.a,
-      d: this._adsr.d,
-      r: this._adsr.r,
-      duration: dur,
-      mode: this._adsrMode,
-    });
-
-    applyAdsr({
-      target,
-      startTime: start,
-      envTimes,
-      maxValue: initialGain,
-      sustainValue: this._adsr.s * initialGain,
-    });
-
-    return envTimes.r.end;
   }
 
   private applyPostgain(
@@ -326,9 +343,13 @@ abstract class Instrument<T> {
     return this;
   }
 
-  detune(x: number) {
-    this._detune = x;
-    // if (lfo) this._lfoMap.set("detune", lfo);
+  detune(...v: (number | number[])[] | [LFO]) {
+    if (isLfoTuple(v)) {
+      this._detune.note(v[0].value);
+      this._lfoMap.set("detune", v[0]);
+    } else {
+      this._detune.note(...v);
+    }
     return this;
   }
 
@@ -346,8 +367,7 @@ abstract class Instrument<T> {
       };
     });
 
-    // stop current lfos to make sure that lfo period stays synced with bpm
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
     const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
     const destination = this.connectChain(filters);
@@ -408,36 +428,3 @@ abstract class Instrument<T> {
 
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
-
-function isNullish(v: unknown) {
-  return v === null || v === undefined;
-}
-
-function isLfoTuple(n: unknown[]): n is [LFO] {
-  return n[0] instanceof LFO;
-}
-
-interface SteppedRampOptions {
-  target: AudioParam;
-  startTime: number;
-  duration: number;
-  steps: Nullable<number>[];
-  fade?: number;
-}
-
-function applySteppedRamp(opts: SteppedRampOptions) {
-  const { target, steps, fade = 0.001, startTime, duration } = opts;
-  const stepLength = (duration - fade * steps.length) / steps.length;
-
-  target.cancelScheduledValues(startTime);
-  target.setValueAtTime(target.value, startTime);
-
-  for (let i = 0; i < steps.length; i++) {
-    const step = steps[i];
-    if (isNullish(step)) continue;
-    const nextIndex = steps.findIndex((v, idx) => idx > i && v !== null);
-    const stepOffset = nextIndex > i ? nextIndex - i : steps.length - i;
-    target.linearRampToValueAtTime(step, startTime + stepLength * i + fade);
-    target.setValueAtTime(step, startTime + stepLength * (i + stepOffset));
-  }
-}

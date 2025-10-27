@@ -105,7 +105,10 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { notes, destination } = this.beforePlay(barStart, barDuration);
+    const { notes, cycleIndex, destination } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._sampleIds.forEach((sampleId) => {
       notes.forEach(async (note, noteIndex) => {
@@ -125,8 +128,9 @@ export default class Sample extends Instrument<number> {
             this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
           playbackRate: playbackRate,
           loop: this._loop,
-          detune: this._detune,
+          detune: this._detune.at(cycleIndex, noteIndex),
         });
+        this.appplyDetune(src, barStart, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
         const gainNode = this.createGain(noteIndex);

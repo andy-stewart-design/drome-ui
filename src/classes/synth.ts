@@ -15,7 +15,10 @@ export default class Synth extends Instrument<number | number[]> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { notes, destination } = this.beforePlay(barStart, barDuration);
+    const { notes, cycleIndex, destination } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._types.forEach((type) => {
       notes.forEach((note, chordIndex) => {
@@ -25,8 +28,8 @@ export default class Synth extends Instrument<number | number[]> {
           const osc = new OscillatorNode(this.ctx, {
             frequency: midiToFrequency(midiNote),
             type,
-            detune: this._detune,
           });
+          this.appplyDetune(osc, barStart, cycleIndex, chordIndex);
           this._audioNodes.add(osc);
 
           const gainNode = this.createGain(chordIndex);
