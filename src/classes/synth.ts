@@ -15,7 +15,10 @@ export default class Synth extends Instrument<number | number[]> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { cycle, noteDuration } = this.beforePlay(barStart, barDuration);
+    const { cycle, noteDuration, destination } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._types.forEach((type) => {
       cycle.forEach((midiChord, chordIndex) => {
@@ -37,7 +40,6 @@ export default class Synth extends Instrument<number | number[]> {
             noteDuration
           );
 
-          const destination = this.connectChain(noteStart, noteDuration);
           const nodes = [osc, gainNode, destination];
           nodes.forEach((node, i) => {
             const nextNode = nodes[i + 1];

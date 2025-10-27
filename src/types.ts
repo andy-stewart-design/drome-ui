@@ -1,3 +1,5 @@
+import type NonNullDromeArray from "./classes/drome-array-non-null";
+
 type Nullable<T> = T | null | undefined;
 
 interface Metronome {
@@ -22,7 +24,7 @@ type InstrumentType = "synth" | "sample";
 type FilterType = "bandpass" | "highpass" | "lowpass";
 interface FilterOptions {
   node: BiquadFilterNode;
-  frequency: number;
+  frequencies: NonNullDromeArray<number>;
   env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 

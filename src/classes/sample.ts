@@ -105,7 +105,10 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { cycle, noteDuration } = this.beforePlay(barStart, barDuration);
+    const { cycle, noteDuration, destination } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._sampleIds.forEach((sampleId) => {
       cycle.forEach(async (chopPoint, groupIndex) => {
@@ -140,7 +143,6 @@ export default class Sample extends Instrument<number> {
           this._cut ? noteDuration : chopDuration
         );
 
-        const destination = this.connectChain(noteStart, noteDuration);
         const nodes = [src, gainNode, destination];
         nodes.forEach((node, i) => {
           const nextNode = nodes[i + 1];
