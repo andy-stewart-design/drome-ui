@@ -15,16 +15,13 @@ export default class Synth extends Instrument<number | number[]> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { cycle, noteDuration, destination } = this.beforePlay(
-      barStart,
-      barDuration
-    );
+    const { notes, destination } = this.beforePlay(barStart, barDuration);
 
     this._types.forEach((type) => {
-      cycle.forEach((midiChord, chordIndex) => {
-        [midiChord].flat().forEach((midiNote) => {
-          if (!midiNote) return;
-
+      notes.forEach((note, chordIndex) => {
+        if (!note) return;
+        [note?.value].flat().forEach((midiNote) => {
+          // if (!midiNote) return;
           const osc = new OscillatorNode(this.ctx, {
             frequency: midiToFrequency(midiNote),
             type,
@@ -32,22 +29,16 @@ export default class Synth extends Instrument<number | number[]> {
           });
           this._audioNodes.add(osc);
 
-          const noteStart = barStart + chordIndex * noteDuration;
           const gainNode = this.createGain(chordIndex);
-          const noteEnd = this.applyGainAdsr(
+          const noteEnd = this.applyGain(
             gainNode.gain,
-            noteStart,
-            noteDuration
+            note.start,
+            note.duration
           );
 
-          const nodes = [osc, gainNode, destination];
-          nodes.forEach((node, i) => {
-            const nextNode = nodes[i + 1];
-            if (nextNode) node.connect(nextNode);
-          });
-
-          osc.start(noteStart);
-          osc.stop(noteStart + noteEnd);
+          osc.connect(gainNode).connect(destination);
+          osc.start(note.start);
+          osc.stop(note.start + noteEnd);
 
           const cleanup = () => {
             osc.disconnect();

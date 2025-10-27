@@ -105,22 +105,19 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { cycle, noteDuration, destination } = this.beforePlay(
-      barStart,
-      barDuration
-    );
+    const { notes, destination } = this.beforePlay(barStart, barDuration);
 
     this._sampleIds.forEach((sampleId) => {
-      cycle.forEach(async (chopPoint, groupIndex) => {
+      notes.forEach(async (note, noteIndex) => {
         // chopGroup?.forEach(async (chopPoint) => {
         // chopPoint is a number between 0 and 1
         const { buffer } = await this.loadSample(sampleId);
-        if (!buffer || typeof chopPoint !== "number") return;
+        if (!buffer || typeof note?.value !== "number") return;
 
         const playbackRate = this._fitValue
           ? buffer.duration / barDuration / this._fitValue
           : Math.abs(this._playbackRate);
-        const chopStartTime = chopPoint * buffer.duration;
+        const chopStartTime = note.value * buffer.duration;
         const chopDuration = buffer.duration - chopStartTime;
 
         const src = new AudioBufferSourceNode(this.ctx, {
@@ -132,15 +129,11 @@ export default class Sample extends Instrument<number> {
         });
         this._audioNodes.add(src);
 
-        const gainNode = new GainNode(this.ctx);
-        this._gainNodes.add(gainNode);
-
-        const noteStart = barStart + groupIndex * noteDuration;
-        // const endTime = this.applyGainAdsr(
-        this.applyGainAdsr(
+        const gainNode = this.createGain(noteIndex);
+        this.applyGain(
           gainNode.gain,
-          noteStart,
-          this._cut ? noteDuration : chopDuration
+          note.start,
+          this._cut ? note.duration : chopDuration
         );
 
         const nodes = [src, gainNode, destination];
@@ -149,7 +142,7 @@ export default class Sample extends Instrument<number> {
           if (nextNode) node.connect(nextNode);
         });
 
-        src.start(noteStart, chopStartTime);
+        src.start(note.start, chopStartTime);
         // src.stop(noteStart + endTime + 0.1);
 
         const cleanup = () => {

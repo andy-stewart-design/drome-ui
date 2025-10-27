@@ -15,7 +15,7 @@ d.synth("sawtooth")
   // .lpenv(3, 1, 0, 1, 0.1)
   // .lplfo(600, 0.5, "sine")
   // .rel(0.2)
-  // .postgain([1, 0.25, 1, 0.25])
+  .postgain([1, 0.25, 1, 0.25])
   .note([note, note + 4, note + 7, note + 11]);
 // .note([note]);
 // .euclid(5, 8);

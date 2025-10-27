@@ -1,6 +1,6 @@
 import DromeArray from "./drome-array";
 import NonNullDromeArray from "./drome-array-non-null";
-import LFO, { type LfoOptions } from "./lfo";
+import LFO from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
 import type {
@@ -19,6 +19,12 @@ interface InstrumentOptions<T> {
   baseGain?: number;
   adsr?: AdsrEnvelope;
 }
+
+type Note<T> = {
+  value: T;
+  start: number;
+  duration: number;
+} | null;
 
 abstract class Instrument<T> {
   protected _drome: Drome;
@@ -86,47 +92,33 @@ abstract class Instrument<T> {
     if (freqOrLfo instanceof LFO) this._lfoMap.set(type, freqOrLfo);
   }
 
-  private createLfo(type: FilterType, opts: Omit<LfoOptions, "bpm" | "value">) {
-    const bpm = this._drome.beatsPerMin;
-    const value = this._filterMap.get(type)?.frequencies.at(0, 0);
-
-    if (!value) {
-      const msg = `[DROME]: Must create a ${type} filter before applying an lfo`;
-      console.warn(msg);
-      return this;
-    }
-
-    this._lfoMap.set(type, new LFO(this.ctx, { bpm, value, ...opts }));
-  }
-
   private applyFilters(
-    cycle: Nullable<T>[],
+    notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
     duration: number
   ) {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
       const lfo = this._lfoMap.get(type);
-      const noteDuration = duration / cycle.length;
 
       if (lfo) {
         lfo.create().connect(filter.node.frequency).start(startTime);
       } else if (filter.env) {
-        for (let i = 0; i < cycle.length; i++) {
-          if (isNullish(cycle[i])) continue;
-          const noteStart = startTime + i * noteDuration;
+        for (let i = 0; i < notes.length; i++) {
+          const note = notes[i];
+          if (isNullish(note)) continue;
 
           const envTimes = getAdsrTimes({
             a: filter.env.adsr.a,
             d: filter.env.adsr.d,
             r: filter.env.adsr.r,
-            duration: noteDuration - 0.01,
+            duration: note.duration - 0.01,
             mode: this._adsrMode,
           });
 
           applyAdsr({
             target: filter.node.frequency,
-            startTime: noteStart,
+            startTime: note.start,
             startValue: filter.frequencies.at(0, 0),
             envTimes,
             maxValue: filter.frequencies.at(0, 0) * filter.env.depth,
@@ -136,12 +128,12 @@ abstract class Instrument<T> {
         }
       } else {
         const target = filter.node.frequency;
-        const filterCycle = filter.frequencies.at(cycleIndex);
+        const steps = filter.frequencies.at(cycleIndex);
 
-        let i = 0;
-        const steps = cycle.map((v) =>
-          !isNullish(v) ? filterCycle[i++ % filterCycle.length] : null
-        );
+        // let i = 0;
+        // const steps = notes.map((v) =>
+        //   !isNullish(v) ? filterCycle[i++ % filterCycle.length] : null
+        // );
 
         applySteppedRamp({ target, startTime, duration, steps });
       }
@@ -150,24 +142,7 @@ abstract class Instrument<T> {
     });
   }
 
-  private applyPostgain(
-    cycle: Nullable<T>[],
-    cycleIndex: number,
-    startTime: number,
-    duration: number
-  ) {
-    const target = this._postgainNode.gain;
-    const postgainCycle = this._postgain.at(cycleIndex);
-
-    let i = 0;
-    const steps = cycle.map((v) =>
-      !isNullish(v) ? postgainCycle[i++ % postgainCycle.length] : null
-    );
-
-    applySteppedRamp({ target, startTime, duration, steps });
-  }
-
-  protected applyGainAdsr(target: AudioParam, start: number, dur: number) {
+  protected applyGain(target: AudioParam, start: number, dur: number) {
     const initialGain = target.value;
 
     const envTimes = getAdsrTimes({
@@ -187,6 +162,23 @@ abstract class Instrument<T> {
     });
 
     return envTimes.r.end;
+  }
+
+  private applyPostgain(
+    _notes: Note<T>[],
+    cycleIndex: number,
+    startTime: number,
+    duration: number
+  ) {
+    const target = this._postgainNode.gain;
+    const steps = this._postgain.at(cycleIndex);
+
+    // let i = 0;
+    // const steps = notes.map((v) =>
+    //   !isNullish(v) ? postgainCycle[i++ % postgainCycle.length] : null
+    // );
+
+    applySteppedRamp({ target, startTime, duration, steps });
   }
 
   protected connectChain(audioNodes: AudioNode[]) {
@@ -286,8 +278,10 @@ abstract class Instrument<T> {
     return this;
   }
 
-  bplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("bandpass", { depth, speed, type });
+  bpq(v: number) {
+    this._filterMap
+      .get("bandpass")
+      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 
@@ -307,8 +301,10 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("highpass", { depth, speed, type });
+  hpq(v: number) {
+    this._filterMap
+      .get("highpass")
+      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 
@@ -328,8 +324,10 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lplfo(depth: number, speed: number, type?: OscillatorType) {
-    this.createLfo("lowpass", { depth, speed, type });
+  lpq(v: number) {
+    this._filterMap
+      .get("lowpass")
+      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 
@@ -344,14 +342,22 @@ abstract class Instrument<T> {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
     const cycle = this._cycles.at(cycleIndex);
     const noteDuration = barDuration / cycle.length;
+    const notes: Note<T>[] = cycle.map((value, i) => {
+      if (isNullish(value)) return null;
+      return {
+        value,
+        start: barStart + i * noteDuration,
+        duration: noteDuration,
+      };
+    });
 
     // stop current lfos to make sure that lfo period stays synced with bpm
     this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
-    this.applyPostgain(cycle, cycleIndex, barStart, barDuration);
-    const filters = this.applyFilters(cycle, cycleIndex, barStart, barDuration);
+    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
+    const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
     const destination = this.connectChain(filters);
 
-    return { cycle, cycleIndex, noteDuration, destination };
+    return { notes, cycleIndex, destination };
   }
 
   stop(when?: number) {
@@ -398,6 +404,10 @@ abstract class Instrument<T> {
 
   get ctx() {
     return this._drome.ctx;
+  }
+
+  get type() {
+    return "rate" in this ? "sample" : "synth";
   }
 }
 
