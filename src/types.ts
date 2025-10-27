@@ -1,4 +1,4 @@
-import type NonNullDromeArray from "./classes/drome-array-non-null";
+import type DromeArray from "./classes/drome-array";
 
 type Nullable<T> = T | null | undefined;
 
@@ -24,13 +24,13 @@ type InstrumentType = "synth" | "sample";
 type FilterType = "bandpass" | "highpass" | "lowpass";
 interface FilterOptions {
   node: BiquadFilterNode;
-  frequencies: NonNullDromeArray<number>;
+  frequencies: DromeArray<number>;
   env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
 type LfoableParam = "detune" | FilterType;
 
-type DromeArrayValue<T> = Nullable<T>[][];
+type DromeCycleValue<T> = Nullable<T>[][];
 
 export type {
   Nullable,
@@ -43,5 +43,5 @@ export type {
   FilterType,
   FilterOptions,
   LfoableParam,
-  DromeArrayValue,
+  DromeCycleValue,
 };

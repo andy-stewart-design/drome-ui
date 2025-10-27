@@ -27,7 +27,7 @@ d.synth("sawtooth")
 //   .lpenv(3, 0, 0.75, 0.375, 0.01)
 //   .note([note, note, note, note]);
 
-// d.sample("bd:3").bank("tr909").note([0, 0, 0, 0]).rate(1);
+d.sample("bd:3").bank("tr909").euclid(4, 4).rate(1);
 // .adsr(0.01, 0, 1, 0.1)
 // .adsrMode("clip");
 

@@ -1,5 +1,5 @@
+import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
-import NonNullDromeArray from "./drome-array-non-null";
 import LFO from "./lfo";
 import { applyAdsr, getAdsrTimes } from "../utils/adsr";
 import type Drome from "./drome";
@@ -30,11 +30,11 @@ abstract class Instrument<T> {
   protected _drome: Drome;
   protected _destination: AudioNode;
   protected _connectorNode: AudioNode; // TODO: try to remove this prop
-  protected _cycles: DromeArray<T>;
-  protected _gain: DromeArray<number>;
+  protected _cycles: DromeCycle<T>;
+  protected _gain: DromeCycle<number>;
   protected _baseGain: number;
   protected _adsr: AdsrEnvelope;
-  protected _postgain: NonNullDromeArray<number>;
+  protected _postgain: DromeArray<number>;
   protected _postgainNode: GainNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
@@ -52,11 +52,11 @@ abstract class Instrument<T> {
     this._drome = drome;
     this._destination = opts.destination;
     this._connectorNode = opts.destination;
-    this._cycles = new DromeArray(opts.defaultCycle ?? []);
-    this._gain = new DromeArray([[1]]);
+    this._cycles = new DromeCycle(opts.defaultCycle ?? []);
+    this._gain = new DromeCycle([[1]]);
     this._baseGain = opts.baseGain || 0.75;
     this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
-    this._postgain = new NonNullDromeArray([[1]]);
+    this._postgain = new DromeArray([[1]]);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._audioNodes = new Set();
     this._gainNodes = new Set();
@@ -77,15 +77,10 @@ abstract class Instrument<T> {
     return gainNode;
   }
 
-  private createFilter(
-    type: FilterType,
-    freqOrLfo: NonNullDromeArray<number> | LFO
-  ) {
+  private createFilter(type: FilterType, freqOrLfo: DromeArray<number> | LFO) {
     const isLfo = freqOrLfo instanceof LFO;
     const frequency = isLfo ? freqOrLfo.value : freqOrLfo.at(0, 0);
-    const frequencies = isLfo
-      ? new NonNullDromeArray([[frequency]])
-      : freqOrLfo;
+    const frequencies = isLfo ? new DromeArray([[frequency]]) : freqOrLfo;
     const node = new BiquadFilterNode(this.ctx, { type, frequency });
 
     this._filterMap.set(type, { node, frequencies, env: undefined });
@@ -265,7 +260,7 @@ abstract class Instrument<T> {
   bpf(...valueOrLfo: (number | number[])[] | [LFO]) {
     const input = isLfoTuple(valueOrLfo)
       ? valueOrLfo[0]
-      : new NonNullDromeArray([[0]]).note(...valueOrLfo);
+      : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("bandpass", input);
     return this;
   }
@@ -288,7 +283,7 @@ abstract class Instrument<T> {
   hpf(...valueOrLfo: (number | number[])[] | [LFO]) {
     const input = isLfoTuple(valueOrLfo)
       ? valueOrLfo[0]
-      : new NonNullDromeArray([[0]]).note(...valueOrLfo);
+      : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("highpass", input);
     return this;
   }
@@ -311,7 +306,7 @@ abstract class Instrument<T> {
   lpf(...valueOrLfo: (number | number[])[] | [LFO]) {
     const input = isLfoTuple(valueOrLfo)
       ? valueOrLfo[0]
-      : new NonNullDromeArray([[0]]).note(...valueOrLfo);
+      : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("lowpass", input);
     return this;
   }
