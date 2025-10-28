@@ -5,9 +5,9 @@ import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
-type Note<T> = Nullable<T>;
-type Chord<T> = Note<T>[];
-type Cycle<T> = Nullable<Chord<T>>[];
+// type Note<T> = Nullable<T>;
+// type Chord<T> = Note<T>[];
+// type Cycle<T> = Nullable<Chord<T>>[];
 
 interface SampleOptions extends InstrumentOptions<number> {
   sampleIds?: string[];
@@ -60,7 +60,7 @@ export default class Sample extends Instrument<number> {
     return this;
   }
 
-  chop(numChops: number, ...input: (number | Chord<number> | Cycle<number>)[]) {
+  chop(numChops: number, ...input: (number | number[])[]) {
     const isArray = Array.isArray;
     const convert = (n: Nullable<number>) => {
       return typeof n === "number" ? (1 / numChops) * (n % numChops) : null;
@@ -71,20 +71,17 @@ export default class Sample extends Instrument<number> {
       // const step = Math.min(1 / numChops, 1 / this._cycles.length);
       const step = 1 / (chopsPerCycle * this._cycles.length);
 
-      this._cycles = Array.from({ length: this._cycles.length }, (_, i) => {
-        return Array.from({ length: chopsPerCycle }, (_, j) => {
-          return [step * j + chopsPerCycle * step * i];
-        });
-      });
+      this._cycles.value = Array.from(
+        { length: this._cycles.length },
+        (_, i) => {
+          return Array.from({ length: chopsPerCycle }, (_, j) => {
+            return step * j + chopsPerCycle * step * i;
+          });
+        }
+      );
     } else {
-      this._cycles = input.map((cycle) =>
-        isArray(cycle)
-          ? cycle.map((chord) =>
-              isArray(chord)
-                ? chord.map((note) => convert(note))
-                : [convert(chord)]
-            )
-          : [[convert(cycle)]]
+      this._cycles.value = input.map((cycle) =>
+        isArray(cycle) ? cycle.map((chord) => convert(chord)) : [convert(cycle)]
       );
     }
 
@@ -108,75 +105,60 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    super.play(barStart, barDuration);
-    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const cycle = this._cycles[cycleIndex];
-    const noteDuration = barDuration / cycle.length;
+    const { notes, cycleIndex, destination } = this.beforePlay(
+      barStart,
+      barDuration
+    );
 
     this._sampleIds.forEach((sampleId) => {
-      cycle.forEach((chopGroup, groupIndex) => {
-        chopGroup?.forEach(async (chopPoint) => {
-          // chopPoint is a number between 0 and 1
-          const { buffer } = await this.loadSample(sampleId);
-          if (!buffer || typeof chopPoint !== "number") return;
+      notes.forEach(async (note, noteIndex) => {
+        // chopGroup?.forEach(async (chopPoint) => {
+        // chopPoint is a number between 0 and 1
+        const { buffer } = await this.loadSample(sampleId);
+        if (!buffer || typeof note?.value !== "number") return;
 
-          const playbackRate = this._fitValue
-            ? buffer.duration / barDuration / this._fitValue
-            : Math.abs(this._playbackRate);
-          const chopStartTime = chopPoint * buffer.duration;
-          const chopDuration = buffer.duration - chopStartTime;
+        const playbackRate = this._fitValue
+          ? buffer.duration / barDuration / this._fitValue
+          : Math.abs(this._playbackRate);
+        const chopStartTime = note.value * buffer.duration;
+        const chopDuration = buffer.duration - chopStartTime;
 
-          const src = new AudioBufferSourceNode(this.ctx, {
-            buffer:
-              this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
-            playbackRate: playbackRate,
-            loop: this._loop,
-            detune: this._detune,
-          });
-          this._audioNodes.add(src);
-
-          const gainNode = new GainNode(this.ctx);
-          this._gainNodes.add(gainNode);
-
-          const noteStart = barStart + groupIndex * noteDuration;
-          // const endTime = this.applyGainAdsr(
-          this.applyGainAdsr(
-            gainNode.gain,
-            noteStart,
-            this._cut ? noteDuration : chopDuration
-          );
-          const filterNodes = this.createFilters(
-            noteStart,
-            this._cut ? noteDuration : chopDuration
-          );
-          // this.applyLFOs(this);
-
-          const nodes = [src, gainNode, ...filterNodes, this.connectChain()];
-          nodes.forEach((node, i) => {
-            const nextNode = nodes[i + 1];
-            if (nextNode) node.connect(nextNode);
-          });
-
-          src.start(noteStart, chopStartTime);
-          // src.stop(noteStart + endTime + 0.1);
-
-          const cleanup = () => {
-            src.disconnect();
-            this._audioNodes.delete(src);
-            gainNode.disconnect();
-            this._gainNodes.delete(gainNode);
-            // cleanup after delay to prevent popping
-            setTimeout(() => {
-              filterNodes.forEach((node) => {
-                node.disconnect();
-                this._filterNodes.delete(node);
-              });
-            }, 100);
-            src.removeEventListener("ended", cleanup);
-          };
-
-          src.addEventListener("ended", cleanup);
+        const src = new AudioBufferSourceNode(this.ctx, {
+          buffer:
+            this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
+          playbackRate: playbackRate,
+          loop: this._loop,
+          detune: this._detune.at(cycleIndex, noteIndex),
         });
+        this.appplyDetune(src, barStart, cycleIndex, noteIndex);
+        this._audioNodes.add(src);
+
+        const gainNode = this.createGain(noteIndex);
+        this.applyGain(
+          gainNode.gain,
+          note.start,
+          this._cut ? note.duration : chopDuration
+        );
+
+        const nodes = [src, gainNode, destination];
+        nodes.forEach((node, i) => {
+          const nextNode = nodes[i + 1];
+          if (nextNode) node.connect(nextNode);
+        });
+
+        src.start(note.start, chopStartTime);
+        // src.stop(noteStart + endTime + 0.1);
+
+        const cleanup = () => {
+          src.disconnect();
+          this._audioNodes.delete(src);
+          gainNode.disconnect();
+          this._gainNodes.delete(gainNode);
+          src.removeEventListener("ended", cleanup);
+        };
+
+        src.addEventListener("ended", cleanup);
+        // });
       });
     });
   }

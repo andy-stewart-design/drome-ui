@@ -107,6 +107,10 @@ class AudioClock {
     return this._paused;
   }
 
+  get beatsPerMin() {
+    return this._bpm;
+  }
+
   get barStartTime() {
     return this.nextBeatTime;
   }
