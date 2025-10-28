@@ -38,9 +38,9 @@ class DromeArray<T> {
   at(i: number): T[];
   at(i: number, j: number): T;
   at(i: number, j?: number) {
-    const value = this.value[i];
-    if (typeof j === "number") return value[j % value.length];
-    else return value;
+    const currentValue = this.value[i % this.value.length];
+    if (typeof j === "number") return currentValue[j % currentValue.length];
+    else return currentValue;
   }
 
   get length() {

@@ -22,12 +22,12 @@ const lfo = d.lfo(0, 100, 4).type("sine");
 // // .gain(0.3);
 // // .note([note]);
 
-d.synth("sawtooth")
-  .lpf(800)
-  .att(0.01)
-  .rel(0.025)
-  .detune(lfo)
-  .note([note, note + 4, note + 7, note + 11]);
+// d.synth("sawtooth")
+//   .lpf(800)
+//   .att(0.01)
+//   .rel(0.025)
+//   .detune(lfo)
+//   .note([note, note + 4, note + 7, note + 11]);
 
 // d.synth("sawtooth", "sine")
 //   .lpf(100)
@@ -44,21 +44,13 @@ d.synth("sawtooth")
 //   .note(0, 0.4)
 //   .lpf(200)
 //   .lpenv(8, 0.1)
-//   // .lplfo(100, 4, "square")
 //   .cut();
 
 // d.sample("break").bank("loops").fit(2).chop(8, [0, 5, 1, 6]).cut();
 
-// d.sample("rhodes")
-//   .bank("loops")
-//   .fit(2)
-//   .chop(4)
-//   .rev()
-//   .cut()
-//   .adsrMode("clip")
-//   .bpf(600)
-//   .bpenv(3)
-//   .dec(0.02);
+d.sample("rhodes").bank("loops").fit(2).chop(4).rev().cut().adsrMode("clip");
+// .bpf(600)
+// .bpenv(3)
 
 function App() {
   return (
