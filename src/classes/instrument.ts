@@ -163,11 +163,6 @@ abstract class Instrument<T> {
         const target = filter.node.frequency;
         const steps = filter.frequencies.at(cycleIndex);
 
-        // let i = 0;
-        // const steps = notes.map((v) =>
-        //   !isNullish(v) ? filterCycle[i++ % filterCycle.length] : null
-        // );
-
         applySteppedRamp({ target, startTime, duration, steps });
       }
 
@@ -183,11 +178,6 @@ abstract class Instrument<T> {
   ) {
     const target = this._postgainNode.gain;
     const steps = this._postgain.at(cycleIndex);
-
-    // let i = 0;
-    // const steps = notes.map((v) =>
-    //   !isNullish(v) ? postgainCycle[i++ % postgainCycle.length] : null
-    // );
 
     applySteppedRamp({ target, startTime, duration, steps });
   }
