@@ -25,23 +25,30 @@ type FilterType = "bandpass" | "highpass" | "lowpass";
 interface FilterOptions {
   node: BiquadFilterNode;
   frequencies: DromeArray<number>;
-  env: { depth: number; adsr: AdsrEnvelope } | undefined;
+  // env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
 type LfoableParam = "detune" | FilterType;
 
 type DromeCycleValue<T> = Nullable<T>[][];
 
+type Note<T> = {
+  value: T;
+  start: number;
+  duration: number;
+} | null;
+
 export type {
-  Nullable,
-  Metronome,
+  AdsrEnvelope,
+  AdsrMode,
+  DromeCycleValue,
   DromeEventCallback,
   DromeEventType,
-  AdsrMode,
-  AdsrEnvelope,
-  InstrumentType,
-  FilterType,
   FilterOptions,
+  FilterType,
+  InstrumentType,
   LfoableParam,
-  DromeCycleValue,
+  Metronome,
+  Note,
+  Nullable,
 };

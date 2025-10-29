@@ -60,6 +60,11 @@ export default class Sample extends Instrument<number> {
     return this;
   }
 
+  begin(...input: (Nullable<number> | Nullable<number>[])[]) {
+    this._cycles.note(...input);
+    return this;
+  }
+
   chop(numChops: number, ...input: (number | number[])[]) {
     const isArray = Array.isArray;
     const convert = (n: Nullable<number>) => {
@@ -128,17 +133,20 @@ export default class Sample extends Instrument<number> {
             this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
           playbackRate: playbackRate,
           loop: this._loop,
-          detune: this._detune.at(cycleIndex, noteIndex),
         });
         this.appplyDetune(src, barStart, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
-        const gainNode = this.createGain(noteIndex);
-        this.applyGain(
-          gainNode.gain,
+        const { gainNode } = this.createGain(
           note.start,
-          this._cut ? note.duration : chopDuration
+          this._cut ? note.duration : chopDuration,
+          noteIndex
         );
+        // this.applyGainEnv(
+        //   gainNode.gain,
+        //   note.start,
+        //   this._cut ? note.duration : chopDuration
+        // );
 
         const nodes = [src, gainNode, destination];
         nodes.forEach((node, i) => {

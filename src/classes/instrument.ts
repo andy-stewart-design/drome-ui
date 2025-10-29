@@ -1,18 +1,19 @@
 import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
-import { applyAdsr, getAdsrTimes } from "../utils/adsr";
+import Envelope from "./envelope";
 import { isNullish, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
 import type {
-  Nullable,
-  InstrumentType,
-  AdsrEnvelope,
   AdsrMode,
-  FilterType,
+  AdsrEnvelope,
   FilterOptions,
+  FilterType,
+  InstrumentType,
   LfoableParam,
+  Note,
+  Nullable,
 } from "../types";
 
 interface InstrumentOptions<T> {
@@ -22,32 +23,26 @@ interface InstrumentOptions<T> {
   adsr?: AdsrEnvelope;
 }
 
-type Note<T> = {
-  value: T;
-  start: number;
-  duration: number;
-} | null;
-
 abstract class Instrument<T> {
   protected _drome: Drome;
-  protected _destination: AudioNode;
-  protected _connectorNode: AudioNode; // TODO: try to remove this prop
+  private _destination: AudioNode;
+  private _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeCycle<T>;
-  protected _gain: DromeCycle<number>;
-  protected _baseGain: number;
-  protected _adsr: AdsrEnvelope;
-  protected _postgain: DromeArray<number>;
-  protected _postgainNode: GainNode;
+  private _gain: DromeArray<number>;
+  private _baseGain: number;
+  private _postgain: DromeArray<number>;
+  private _detune: DromeArray<number> = new DromeArray([[0]]);
+  protected readonly _postgainNode: GainNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<LfoableParam, LFO>;
+  protected _envMap: Map<"gain" | FilterType, Envelope>;
   protected _startTime: number | undefined;
-  protected _adsrMode: AdsrMode = "fit";
-  protected _detune: DromeArray<number> = new DromeArray([[0]]);
   private _isConnected = false;
 
   // Method Aliases
+  env: (a: number, d?: number, s?: number, r?: number) => this;
   rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
@@ -55,28 +50,32 @@ abstract class Instrument<T> {
     this._destination = opts.destination;
     this._connectorNode = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
-    this._gain = new DromeCycle([[1]]);
+    this._gain = new DromeArray([[1]]);
     this._baseGain = opts.baseGain || 0.75;
-    this._adsr = opts.adsr ?? { a: 0.01, d: 0, s: 1, r: 0.01 };
     this._postgain = new DromeArray([[1]]);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
     this._lfoMap = new Map();
+    const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
+    this._envMap = new Map([["gain", new Envelope(1).adsr(a, d, s, r)]]);
 
     // Method Aliases
+    this.env = this.adsr.bind(this);
     this.rev = this.reverse.bind(this);
   }
 
-  protected createGain(chordIndex: number) {
+  protected createGain(start: number, dur: number, chordIndex: number) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const gain = this._gain.at(cycleIndex, chordIndex) ?? 1;
-    const gainNode = new GainNode(this.ctx, {
-      gain: gain * this._baseGain,
-    });
+    const gain = this._gain.at(cycleIndex, chordIndex) * this._baseGain;
+    const gainNode = new GainNode(this.ctx, { gain });
     this._gainNodes.add(gainNode);
-    return gainNode;
+
+    if (this._gainEnv.maxValue !== gain) this._gainEnv.maxValue = gain;
+    const noteEnd = this._gainEnv.apply(gainNode.gain, start, dur);
+
+    return { gainNode, noteEnd };
   }
 
   private createFilter(type: FilterType, freqOrLfo: DromeArray<number> | LFO) {
@@ -85,30 +84,26 @@ abstract class Instrument<T> {
     const frequencies = isLfo ? new DromeArray([[frequency]]) : freqOrLfo;
     const node = new BiquadFilterNode(this.ctx, { type, frequency });
 
-    this._filterMap.set(type, { node, frequencies, env: undefined });
+    this._filterMap.set(type, { node, frequencies });
     if (isLfo) this._lfoMap.set(type, freqOrLfo);
   }
 
-  protected applyGain(target: AudioParam, start: number, dur: number) {
-    const initialGain = target.value;
+  private createFilterEnvelope(type: FilterType, max: number, adsr: number[]) {
+    const filter = this._filterMap.get(type);
 
-    const envTimes = getAdsrTimes({
-      a: this._adsr.a,
-      d: this._adsr.d,
-      r: this._adsr.r,
-      duration: dur,
-      mode: this._adsrMode,
-    });
+    if (!filter) {
+      console.warn(
+        `[DROME] must create a ${type} filter before setting its envelope`
+      );
+      return this;
+    }
 
-    applyAdsr({
-      target,
-      startTime: start,
-      envTimes,
-      maxValue: initialGain,
-      sustainValue: this._adsr.s * initialGain,
-    });
-
-    return envTimes.r.end;
+    const env = new Envelope(max, filter.frequencies.at(0, 0), 30)
+      .a(adsr[0] ?? 0.125)
+      .d(adsr[1] ?? 0.125)
+      .s(adsr[2] ?? 1)
+      .r(adsr[3] ?? 0.01);
+    this._envMap.set(type, env);
   }
 
   protected appplyDetune(
@@ -134,31 +129,15 @@ abstract class Instrument<T> {
   ) {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
       const lfo = this._lfoMap.get(type);
+      const env = this._envMap.get(type);
 
       if (lfo) {
         lfo.create().connect(filter.node.frequency).start(startTime);
-      } else if (filter.env) {
+      } else if (env) {
         for (let i = 0; i < notes.length; i++) {
           const note = notes[i];
           if (isNullish(note)) continue;
-
-          const envTimes = getAdsrTimes({
-            a: filter.env.adsr.a,
-            d: filter.env.adsr.d,
-            r: filter.env.adsr.r,
-            duration: note.duration - 0.01,
-            mode: this._adsrMode,
-          });
-
-          applyAdsr({
-            target: filter.node.frequency,
-            startTime: note.start,
-            startValue: filter.frequencies.at(0, 0),
-            envTimes,
-            maxValue: filter.frequencies.at(0, 0) * filter.env.depth,
-            sustainValue: filter.frequencies.at(0, 0) * filter.env.adsr.s,
-            endValue: 30,
-          });
+          env.apply(filter.node.frequency, note.start, note.duration - 0.001);
         }
       } else {
         const target = filter.node.frequency;
@@ -242,35 +221,37 @@ abstract class Instrument<T> {
   }
 
   adsrMode(mode: AdsrMode) {
-    this._adsrMode = mode;
+    this._envMap.forEach((env) => env.mode(mode));
     return this;
   }
 
   adsr(a: number, d?: number, s?: number, r?: number) {
-    this._adsr.a = a;
-    if (typeof d === "number") this._adsr.d = d;
-    if (typeof s === "number") this._adsr.s = s;
-    if (typeof r === "number") this._adsr.r = r;
+    const gainEnv = this._gainEnv;
+    gainEnv.a(a);
+    if (typeof d === "number") gainEnv.d(d);
+    if (typeof s === "number") gainEnv.s(s);
+    if (typeof r === "number") gainEnv.r(r);
+
     return this;
   }
 
   att(v: number) {
-    this._adsr.a = v;
+    this._gainEnv.a(v);
     return this;
   }
 
   dec(v: number) {
-    this._adsr.d = v;
+    this._gainEnv.d(v);
     return this;
   }
 
   sus(v: number) {
-    this._adsr.s = v;
+    this._gainEnv.s(v);
     return this;
   }
 
   rel(v: number) {
-    this._adsr.r = v;
+    this._gainEnv.r(v);
     return this;
   }
 
@@ -282,11 +263,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  bpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
-    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
-    const filter = this._filterMap.get("bandpass");
-    if (filter) filter.env = { depth, adsr };
-
+  bpenv(maxValue: number, ...adsr: number[]) {
+    this.createFilterEnvelope("bandpass", maxValue, adsr);
     return this;
   }
 
@@ -305,11 +283,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
-    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
-    const filter = this._filterMap.get("highpass");
-    if (filter) filter.env = { depth, adsr };
-
+  hpenv(maxValue: number, ...adsr: number[]) {
+    this.createFilterEnvelope("highpass", maxValue, adsr);
     return this;
   }
 
@@ -328,11 +303,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpenv(depth: number, a?: number, d?: number, s?: number, r?: number) {
-    const adsr = { a: a ?? 0.125, d: d ?? 0.125, s: s ?? 1, r: r ?? 0.01 };
-    const filter = this._filterMap.get("lowpass");
-    if (filter) filter.env = { depth, adsr };
-
+  lpenv(maxValue: number, ...adsr: number[]) {
+    this.createFilterEnvelope("lowpass", maxValue, adsr);
     return this;
   }
 
@@ -423,6 +395,14 @@ abstract class Instrument<T> {
 
   get type() {
     return "rate" in this ? "sample" : "synth";
+  }
+
+  get _gainEnv() {
+    const gainEnv = this._envMap.get("gain");
+    if (!gainEnv) {
+      throw new Error("[DROME] cannot access gainEnv before it has been set");
+    }
+    return gainEnv;
   }
 }
 
