@@ -7,12 +7,30 @@ const note = 48;
 
 // --------------------------------------------------
 // LFO: DETUNE
-// const lfo = d.lfo(0, 100, 4).type("sine");
+// const lfo = d.lfo(-100, 100, 4).type("sine");
 // d.synth("sine").detune(lfo);
 
 // --------------------------------------------------
+// ENV: DETUNE
+// const env = d.env(300).adsr(0.125, 0.125, 0, 0.1);
+// d.synth("sine").detune(env);
+
+// --------------------------------------------------
+// LFO: FILTER
+// const lfo = d.lfo(300, 900, 16).type("sine");
+// d.synth("sawtooth").env(0.05, 0.9, 0.25, 0.1).bpf(lfo).note(note).euclid(4, 4);
+
+// --------------------------------------------------
+// ENV: FILTER
+// const env = d.env(300, 900).adsr(0.25, 0.25, 0.5);
+// d.synth("sawtooth").env(0.05, 0.9, 0.25, 0.1).lpf(env).note(note).euclid(4, 4);
+
+// --------------------------------------------------
 // ENVELOPE: GAIN
-// d.synth("sine").env(0.25, 0.25, 0.5, 0.1).euclid(4, 4);
+// d.synth("triangle").gain(1.25).env(0.25, 0.25, 0.25, 0.1).euclid(4, 4);
+// -------- OR --------
+const env = d.env(0, 1.25).adsr(0.25, 0.25, 0.25, 0.1);
+d.synth("triangle").gain(env).euclid(4, 4);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -23,10 +41,10 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: FILTERS
-d.synth("sawtooth")
-  .bpf(400)
-  .bpenv(1600, 0.25, 0.25, 0.5, 0.1)
-  .note([note, note + 4, note + 7, note + 11]);
+// d.synth("sawtooth")
+//   .bpf(400)
+//   .bpenv(1600, 0.25, 0.25, 0.5, 0.1)
+//   .note([note, note + 4, note + 7, note + 11]);
 
 // d.synth("sawtooth", "sine")
 //   .lpf(100)

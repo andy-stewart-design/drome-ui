@@ -2,7 +2,7 @@ import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
 import Envelope from "./envelope";
-import { isNullish, isLfoTuple } from "../utils/validators";
+import { isNullish, isEnvTuple, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
 import type {
@@ -23,6 +23,8 @@ interface InstrumentOptions<T> {
   adsr?: AdsrEnvelope;
 }
 
+type EnvableParam = "gain" | "detune" | FilterType;
+
 abstract class Instrument<T> {
   protected _drome: Drome;
   private _destination: AudioNode;
@@ -37,12 +39,13 @@ abstract class Instrument<T> {
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<LfoableParam, LFO>;
-  protected _envMap: Map<"gain" | FilterType, Envelope>;
+  protected _envMap: Map<EnvableParam, Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
   // Method Aliases
   env: (a: number, d?: number, s?: number, r?: number) => this;
+  envMode: (mode: AdsrMode) => this;
   rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
@@ -59,10 +62,9 @@ abstract class Instrument<T> {
     this._filterMap = new Map();
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
-    this._envMap = new Map([["gain", new Envelope(1).adsr(a, d, s, r)]]);
-
-    // Method Aliases
+    this._envMap = new Map([["gain", new Envelope(0, 1).adsr(a, d, s, r)]]);
     this.env = this.adsr.bind(this);
+    this.envMode = this.adsrMode.bind(this);
     this.rev = this.reverse.bind(this);
   }
 
@@ -78,14 +80,27 @@ abstract class Instrument<T> {
     return { gainNode, noteEnd };
   }
 
-  private createFilter(type: FilterType, freqOrLfo: DromeArray<number> | LFO) {
-    const isLfo = freqOrLfo instanceof LFO;
-    const frequency = isLfo ? freqOrLfo.value : freqOrLfo.at(0, 0);
-    const frequencies = isLfo ? new DromeArray([[frequency]]) : freqOrLfo;
-    const node = new BiquadFilterNode(this.ctx, { type, frequency });
-
-    this._filterMap.set(type, { node, frequencies });
-    if (isLfo) this._lfoMap.set(type, freqOrLfo);
+  private createFilter(
+    type: FilterType,
+    input: DromeArray<number> | LFO | Envelope
+  ) {
+    if (input instanceof LFO) {
+      const frequency = input.value;
+      const frequencies = new DromeArray([[frequency]]);
+      const node = new BiquadFilterNode(this.ctx, { type, frequency });
+      this._filterMap.set(type, { node, frequencies });
+      this._lfoMap.set(type, input);
+    } else if (input instanceof Envelope) {
+      const frequency = input.startValue;
+      const frequencies = new DromeArray([[frequency]]);
+      const node = new BiquadFilterNode(this.ctx, { type, frequency });
+      this._filterMap.set(type, { node, frequencies });
+      this._envMap.set(type, input);
+    } else {
+      const frequency = input.at(0, 0);
+      const node = new BiquadFilterNode(this.ctx, { type, frequency });
+      this._filterMap.set(type, { node, frequencies: input });
+    }
   }
 
   private createFilterEnvelope(type: FilterType, max: number, adsr: number[]) {
@@ -108,13 +123,18 @@ abstract class Instrument<T> {
 
   protected appplyDetune(
     node: OscillatorNode | AudioBufferSourceNode,
-    startTime: number,
+    note: NonNullable<Note<unknown>>,
     cycleIndex: number,
     chordIndex: number
   ) {
+    const env = this._envMap.get("detune");
     const lfo = this._lfoMap.get("detune");
+    if (env) {
+      env.apply(node.detune, note.start, note.duration - 0.001);
+    }
+
     if (lfo) {
-      if (lfo.paused) lfo.create().connect(node.detune).start(startTime);
+      if (lfo.paused) lfo.create().connect(node.detune).start(note.start);
       else lfo.connect(node.detune);
     } else {
       node.detune.value = this._detune.at(cycleIndex, chordIndex);
@@ -203,8 +223,13 @@ abstract class Instrument<T> {
     return this;
   }
 
-  gain(...v: (number | number[])[]) {
-    this._gain.note(...v);
+  gain(...v: (number | number[])[] | [Envelope]) {
+    if (isEnvTuple(v)) {
+      this._gain.note(v[0].maxValue);
+      this._envMap.set("gain", v[0]);
+    } else {
+      this._gain.note(...v);
+    }
     return this;
   }
 
@@ -255,10 +280,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  bpf(...valueOrLfo: (number | number[])[] | [LFO]) {
-    const input = isLfoTuple(valueOrLfo)
-      ? valueOrLfo[0]
-      : new DromeArray([[0]]).note(...valueOrLfo);
+  bpf(...valueOrLfo: (number | number[])[] | [LFO] | [Envelope]) {
+    const input =
+      isLfoTuple(valueOrLfo) || isEnvTuple(valueOrLfo)
+        ? valueOrLfo[0]
+        : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("bandpass", input);
     return this;
   }
@@ -275,10 +301,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hpf(...valueOrLfo: (number | number[])[] | [LFO]) {
-    const input = isLfoTuple(valueOrLfo)
-      ? valueOrLfo[0]
-      : new DromeArray([[0]]).note(...valueOrLfo);
+  hpf(...valueOrLfo: (number | number[])[] | [LFO] | [Envelope]) {
+    const input =
+      isLfoTuple(valueOrLfo) || isEnvTuple(valueOrLfo)
+        ? valueOrLfo[0]
+        : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("highpass", input);
     return this;
   }
@@ -295,10 +322,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpf(...valueOrLfo: (number | number[])[] | [LFO]) {
-    const input = isLfoTuple(valueOrLfo)
-      ? valueOrLfo[0]
-      : new DromeArray([[0]]).note(...valueOrLfo);
+  lpf(...valueOrLfo: (number | number[])[] | [LFO] | [Envelope]) {
+    const input =
+      isLfoTuple(valueOrLfo) || isEnvTuple(valueOrLfo)
+        ? valueOrLfo[0]
+        : new DromeArray([[0]]).note(...valueOrLfo);
     this.createFilter("lowpass", input);
     return this;
   }
@@ -315,10 +343,12 @@ abstract class Instrument<T> {
     return this;
   }
 
-  detune(...v: (number | number[])[] | [LFO]) {
+  detune(...v: (number | number[])[] | [LFO] | [Envelope]) {
     if (isLfoTuple(v)) {
       this._detune.note(v[0].value);
       this._lfoMap.set("detune", v[0]);
+    } else if (isEnvTuple(v)) {
+      this._envMap.set("detune", v[0]);
     } else {
       this._detune.note(...v);
     }
@@ -350,7 +380,7 @@ abstract class Instrument<T> {
   stop(when?: number) {
     const startTime = this._startTime ?? this.ctx.currentTime;
     const stopTime = when ?? this.ctx.currentTime;
-    const relTime = 0.125;
+    const relTime = 0.15;
 
     if (startTime > this.ctx.currentTime) {
       this._audioNodes.forEach((node) => node.stop());

@@ -134,7 +134,7 @@ export default class Sample extends Instrument<number> {
           playbackRate: playbackRate,
           loop: this._loop,
         });
-        this.appplyDetune(src, barStart, cycleIndex, noteIndex);
+        this.appplyDetune(src, note, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
         const { gainNode } = this.createGain(

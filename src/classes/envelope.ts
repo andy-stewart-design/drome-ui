@@ -8,7 +8,7 @@ class Envelope {
   private _adsr: AdsrEnvelope = { a: 0.01, d: 0, s: 1, r: 0.01 };
   private _mode: AdsrMode = "fit";
 
-  constructor(maxValue: number, startValue = 0, endValue?: number) {
+  constructor(startValue: number, maxValue: number, endValue?: number) {
     this._startValue = startValue;
     this._maxValue = maxValue;
     this._endValue = endValue ?? startValue;
@@ -48,8 +48,6 @@ class Envelope {
   }
 
   apply(target: AudioParam, startTime: number, duration: number) {
-    console.log(target);
-
     const envTimes = getAdsrTimes({
       a: this._adsr.a,
       d: this._adsr.d,
@@ -69,6 +67,10 @@ class Envelope {
     });
 
     return envTimes.r.end;
+  }
+
+  get startValue() {
+    return this._startValue;
   }
 
   get maxValue() {
