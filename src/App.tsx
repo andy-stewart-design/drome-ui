@@ -34,8 +34,8 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-const lfo = d.lfo(-1, 1, 4).type("sine");
+// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+// const lfo = d.lfo(-1, 1, 8).type("sine");
 
 // d.synth("square")
 //   .lpf(800)
@@ -46,12 +46,12 @@ const lfo = d.lfo(-1, 1, 4).type("sine");
 // // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
 // // .pan([-1, 1, -1, 1]);
 
-d.sample("hh")
-  .euclid(16, 16)
-  .pan(lfo)
-  // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
-  // .env(0.05, 0, 1, 0.05)
-  .postgain(0.5);
+// d.sample("hh")
+//   .euclid(16, 16)
+//   .pan(lfo)
+//   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
+//   // .env(0.05, 0, 1, 0.05)
+//   .postgain(0.5);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -78,13 +78,14 @@ d.sample("hh")
 
 // --------------------------------------------------
 // SAMPLES: START POINT
-// d.sample("bass")
-//   .bank("sonicpi")
-//   .fit(2)
-//   .begin(0, 0.4)
-//   .lpf(200)
-//   .lpenv(1000, 0.1, 0.25, 0.25)
-//   .cut();
+d.sample("bass")
+  .bank("sonicpi")
+  .fit(2)
+  .begin(0, 0.45)
+  .lpf(200)
+  .rel(0.1)
+  .lpenv(1000, 0.1, 0.25, 0.25)
+  .cut();
 
 // --------------------------------------------------
 // SAMPLES: CHOPPING
