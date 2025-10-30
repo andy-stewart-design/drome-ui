@@ -1,3 +1,5 @@
+// TODO: FINISH POSTGAIN LFO IMPLEMENTATION (TREMOLO)
+
 import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
@@ -202,10 +204,15 @@ abstract class Instrument<T> {
     startTime: number,
     duration: number
   ) {
-    const target = this._postgainNode.gain;
-    const steps = this._postgain.at(cycleIndex);
+    const lfo = this._lfoMap.get("postgain");
 
-    applySteppedRamp({ target, startTime, duration, steps });
+    if (lfo) {
+      lfo.create().connect(this._postgainNode.gain).start(startTime);
+    } else {
+      const target = this._postgainNode.gain;
+      const steps = this._postgain.at(cycleIndex);
+      applySteppedRamp({ target, startTime, duration, steps });
+    }
   }
 
   private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
@@ -249,15 +256,20 @@ abstract class Instrument<T> {
     return this;
   }
 
-  postgain(...v: (number | number[])[]) {
-    const firstValue = v.reduce<number>((acc, item) => {
-      if (acc !== 1) return acc;
-      if (typeof item === "number") return item;
-      if (Array.isArray(item) && item.length > 0) return item[0];
-      return acc;
-    }, 1);
-    this._postgainNode.gain.value = firstValue;
-    this._postgain.note(...v);
+  postgain(...v: (number | number[])[] | [LFO]) {
+    if (isLfoTuple(v)) {
+      this._postgainNode.gain.value = v[0].value;
+      this._lfoMap.set("postgain", v[0]);
+    } else {
+      const firstValue = v.reduce<number>((acc, item) => {
+        if (acc !== 1) return acc;
+        if (typeof item === "number") return item;
+        if (Array.isArray(item) && item.length > 0) return item[0];
+        return acc;
+      }, 1);
+      this._postgainNode.gain.value = firstValue;
+      this._postgain.note(...v);
+    }
     return this;
   }
 

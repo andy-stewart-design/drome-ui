@@ -28,7 +28,7 @@ interface FilterOptions {
   // env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
-type AutomatableParam = "gain" | "detune" | "pan" | FilterType;
+type AutomatableParam = "gain" | "postgain" | "detune" | "pan" | FilterType;
 
 type DromeCycleValue<T> = Nullable<T>[][];
 

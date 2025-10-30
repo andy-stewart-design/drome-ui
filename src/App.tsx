@@ -1,5 +1,3 @@
-// TODO: create env with d.env() like how you create lfo with d.lfo()
-
 import Drome from "./classes/drome";
 
 const d = new Drome(120);
@@ -34,21 +32,22 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-// const lfo = d.lfo(-1, 1, 8).type("sine");
+const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+const lfo = d.lfo(0, 1, 8).type("sine");
+console.log(lfo);
 
-// d.synth("square")
-//   .lpf(800)
-//   .note([note, note + 4, note + 7, note + 11])
-//   // .pan(env)
-//   .env(0.05, 0, 1, 0.05)
-//   .pan(env);
-// // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
-// // .pan([-1, 1, -1, 1]);
+d.synth("square")
+  .lpf(800)
+  .note([note, note + 4, note + 7, note + 11])
+  // .pan(env)
+  .postgain(lfo);
+// .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
+// .pan([-1, 1, -1, 1]);
 
 // d.sample("hh")
 //   .euclid(16, 16)
 //   .pan(lfo)
+//   // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
 //   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
 //   // .env(0.05, 0, 1, 0.05)
 //   .postgain(0.5);
@@ -75,17 +74,18 @@ const note = 48;
 // --------------------------------------------------
 // SAMPLES: BASIC
 // d.sample("bd:3").bank("tr909").euclid(4, 4);
+// d.sample("cp").bank("tr808").euclid(2, 4, 1);
 
 // --------------------------------------------------
-// SAMPLES: START POINT
-d.sample("bass")
-  .bank("sonicpi")
-  .fit(2)
-  .begin(0, 0.45)
-  .lpf(200)
-  .rel(0.1)
-  .lpenv(1000, 0.1, 0.25, 0.25)
-  .cut();
+// // SAMPLES: START POINT
+// d.sample("bass")
+//   .bank("sonicpi")
+//   .fit(2)
+//   .begin(0, 0.45)
+//   .lpf(200)
+//   .rel(0.1)
+//   .lpenv(1000, 0.1, 0.25, 0.25)
+//   .cut();
 
 // --------------------------------------------------
 // SAMPLES: CHOPPING
