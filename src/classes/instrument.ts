@@ -7,11 +7,11 @@ import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
 import type {
   AdsrMode,
+  AutomatableParam,
   AdsrEnvelope,
   FilterOptions,
   FilterType,
   InstrumentType,
-  LfoableParam,
   Note,
   Nullable,
 } from "../types";
@@ -23,8 +23,6 @@ interface InstrumentOptions<T> {
   adsr?: AdsrEnvelope;
 }
 
-type EnvableParam = "gain" | "detune" | FilterType;
-
 abstract class Instrument<T> {
   protected _drome: Drome;
   private _destination: AudioNode;
@@ -34,12 +32,14 @@ abstract class Instrument<T> {
   private _baseGain: number;
   private _postgain: DromeArray<number>;
   private _detune: DromeArray<number> = new DromeArray([[0]]);
+  private _pan: DromeArray<number> = new DromeArray([[0]]);
   protected readonly _postgainNode: GainNode;
+  protected readonly _panNode: StereoPannerNode;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
-  protected _lfoMap: Map<LfoableParam, LFO>;
-  protected _envMap: Map<EnvableParam, Envelope>;
+  protected _lfoMap: Map<AutomatableParam, LFO>;
+  protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -57,6 +57,7 @@ abstract class Instrument<T> {
     this._baseGain = opts.baseGain || 0.75;
     this._postgain = new DromeArray([[1]]);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
+    this._panNode = new StereoPannerNode(this.ctx);
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
@@ -121,7 +122,7 @@ abstract class Instrument<T> {
     this._envMap.set(type, env);
   }
 
-  protected appplyDetune(
+  protected applyDetune(
     node: OscillatorNode | AudioBufferSourceNode,
     note: NonNullable<Note<unknown>>,
     cycleIndex: number,
@@ -131,9 +132,7 @@ abstract class Instrument<T> {
     const lfo = this._lfoMap.get("detune");
     if (env) {
       env.apply(node.detune, note.start, note.duration - 0.001);
-    }
-
-    if (lfo) {
+    } else if (lfo) {
       if (lfo.paused) lfo.create().connect(node.detune).start(note.start);
       else lfo.connect(node.detune);
     } else {
@@ -170,6 +169,33 @@ abstract class Instrument<T> {
     });
   }
 
+  private applyPan(
+    notes: Note<T>[],
+    cycleIndex: number,
+    startTime: number,
+    duration: number
+  ) {
+    const lfo = this._lfoMap.get("pan");
+    const env = this._envMap.get("pan");
+
+    if (lfo) {
+      lfo.create().connect(this._panNode.pan).start(startTime);
+    } else if (env) {
+      for (let i = 0; i < notes.length; i++) {
+        const note = notes[i];
+        if (isNullish(note)) continue;
+        env.apply(this._panNode.pan, note.start, note.duration - 0.001);
+      }
+    } else {
+      const target = this._panNode.pan;
+      const steps = this._pan.at(cycleIndex);
+
+      applySteppedRamp({ target, startTime, duration, steps });
+    }
+
+    return this._panNode;
+  }
+
   private applyPostgain(
     _notes: Note<T>[],
     cycleIndex: number,
@@ -182,16 +208,16 @@ abstract class Instrument<T> {
     applySteppedRamp({ target, startTime, duration, steps });
   }
 
-  protected connectChain(audioNodes: AudioNode[]) {
+  private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
     if (!this._isConnected) {
-      const nodes = [...audioNodes, this._postgainNode, this._destination];
+      const chain = [...nodes.flat(), this._postgainNode, this._destination];
 
-      nodes.forEach((node, i) => {
-        const nextNode = nodes[i + 1];
+      chain.forEach((node, i) => {
+        const nextNode = chain[i + 1];
         if (nextNode) node.connect(nextNode);
       });
 
-      this._connectorNode = nodes[0];
+      this._connectorNode = chain[0];
       this._isConnected = true;
     }
 
@@ -345,6 +371,18 @@ abstract class Instrument<T> {
     return this;
   }
 
+  pan(...v: (number | number[])[] | [LFO] | [Envelope]) {
+    if (isLfoTuple(v)) {
+      this._pan.note(v[0].value);
+      this._lfoMap.set("pan", v[0]);
+    } else if (isEnvTuple(v)) {
+      this._envMap.set("pan", v[0]);
+    } else {
+      this._pan.note(...v);
+    }
+    return this;
+  }
+
   beforePlay(barStart: number, barDuration: number) {
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
@@ -362,7 +400,8 @@ abstract class Instrument<T> {
     this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
     const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
-    const destination = this.connectChain(filters);
+    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
+    const destination = this.connectChain(filters, panNode);
 
     return { notes, cycleIndex, destination };
   }

@@ -28,7 +28,7 @@ interface FilterOptions {
   // env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
-type LfoableParam = "detune" | FilterType;
+type AutomatableParam = "gain" | "detune" | "pan" | FilterType;
 
 type DromeCycleValue<T> = Nullable<T>[][];
 
@@ -41,13 +41,13 @@ type Note<T> = {
 export type {
   AdsrEnvelope,
   AdsrMode,
+  AutomatableParam,
   DromeCycleValue,
   DromeEventCallback,
   DromeEventType,
   FilterOptions,
   FilterType,
   InstrumentType,
-  LfoableParam,
   Metronome,
   Note,
   Nullable,

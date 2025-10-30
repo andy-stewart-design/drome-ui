@@ -57,7 +57,7 @@ function applyAdsr({
   endValue = 0,
 }: applyAdsrArgs) {
   target.cancelScheduledValues(startTime);
-  target.setValueAtTime(startValue, startTime);
+  target.linearRampToValueAtTime(startValue, startTime + 0.0001);
   target.linearRampToValueAtTime(maxValue, startTime + envTimes.a);
   target.linearRampToValueAtTime(sustainValue, startTime + envTimes.d);
   target.setValueAtTime(sustainValue, startTime + envTimes.r.start);

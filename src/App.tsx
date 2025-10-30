@@ -27,10 +27,31 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: GAIN
-// d.synth("triangle").gain(1.25).env(0.25, 0.25, 0.25, 0.1).euclid(4, 4);
+// d.synth("triangle").note(note).gain(1.25).env(0.25, 0.25, 0.25, 0.1).euclid(4, 4);
 // -------- OR --------
-const env = d.env(0, 1.25).adsr(0.25, 0.25, 0.25, 0.1);
-d.synth("triangle").gain(env).euclid(4, 4);
+// const env = d.env(0, 1.25).adsr(0.25, 0.25, 0.25, 0.1);
+// d.synth("triangle").note(note).gain(env).euclid(4, 4);
+
+// --------------------------------------------------
+// ENVELOPE: PAN
+const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+const lfo = d.lfo(-1, 1, 4).type("sine");
+
+// d.synth("square")
+//   .lpf(800)
+//   .note([note, note + 4, note + 7, note + 11])
+//   // .pan(env)
+//   .env(0.05, 0, 1, 0.05)
+//   .pan(env);
+// // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
+// // .pan([-1, 1, -1, 1]);
+
+d.sample("hh")
+  .euclid(16, 16)
+  .pan(lfo)
+  // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
+  // .env(0.05, 0, 1, 0.05)
+  .postgain(0.5);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -48,7 +69,7 @@ d.synth("triangle").gain(env).euclid(4, 4);
 
 // d.synth("sawtooth", "sine")
 //   .lpf(100)
-//   .lpenv(300, 0, 0.75, 0.375, 0.01)
+//   .lpenv(300, 0, 0.5, 0.375, 0.01)
 //   .note([note, note, note, note]);
 
 // --------------------------------------------------
@@ -58,12 +79,12 @@ d.synth("triangle").gain(env).euclid(4, 4);
 // --------------------------------------------------
 // SAMPLES: START POINT
 // d.sample("bass")
-// .bank("sonicpi")
-// .fit(2)
-// .begin(0, 0.4)
-// .lpf(200)
-// .lpenv(1000, 0.1, 0.25, 0.25)
-// .cut();
+//   .bank("sonicpi")
+//   .fit(2)
+//   .begin(0, 0.4)
+//   .lpf(200)
+//   .lpenv(1000, 0.1, 0.25, 0.25)
+//   .cut();
 
 // --------------------------------------------------
 // SAMPLES: CHOPPING
