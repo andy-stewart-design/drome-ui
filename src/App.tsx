@@ -22,6 +22,12 @@ const note = 48;
 // ENV: FILTER
 // const env = d.env(300, 900).adsr(0.25, 0.25, 0.5);
 // d.synth("sawtooth").env(0.05, 0.9, 0.25, 0.1).lpf(env).note(note).euclid(4, 4);
+d.synth("sawtooth")
+  .env(0.05, 0.9, 0.25, 0.1)
+  .lpf(300)
+  .lpenv(900, 0.125, 0.125, 0.5)
+  .note(note)
+  .euclid(4, 4);
 
 // --------------------------------------------------
 // ENVELOPE: GAIN
@@ -32,17 +38,16 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-const lfo = d.lfo(0, 1, 8).type("sine");
-console.log(lfo);
+// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+// const lfo = d.lfo(0.5, 1, 8).type("sine");
 
-d.synth("square")
-  .lpf(800)
-  .note([note, note + 4, note + 7, note + 11])
-  // .pan(env)
-  .postgain(lfo);
-// .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
-// .pan([-1, 1, -1, 1]);
+// d.synth("square")
+//   .lpf(800)
+//   .note([note, note + 4, note + 7, note + 11])
+//   // .pan(env)
+//   .postgain(lfo);
+// // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
+// // .pan([-1, 1, -1, 1]);
 
 // d.sample("hh")
 //   .euclid(16, 16)
@@ -89,7 +94,11 @@ d.synth("square")
 
 // --------------------------------------------------
 // SAMPLES: CHOPPING
-// d.sample("break").bank("loops").fit(2).chop(8, [0, 5, 1, 6]).cut();
+// d.sample("break")
+//   .bank("loops")
+//   .fit(2)
+//   .chop(8, [0, 5, 1, 6], [0, 7, 6, 5])
+//   .cut();
 
 // --------------------------------------------------
 // SAMPLES: CHOP + REVERSE

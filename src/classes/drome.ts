@@ -78,8 +78,8 @@ class Drome {
   }
 
   lfo(minValue: number, maxValue: number, speed: number) {
-    const value = maxValue - minValue;
-    const depth = value / 2;
+    const value = (maxValue + minValue) / 2;
+    const depth = maxValue - value;
     const bpm = this.beatsPerMin;
     return new LFO(this.ctx, { value, depth, speed, bpm });
   }

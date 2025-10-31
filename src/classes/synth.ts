@@ -37,11 +37,6 @@ export default class Synth extends Instrument<number | number[]> {
             note.duration,
             chordIndex
           );
-          // const noteEnd = this.applyGainEnv(
-          //   gainNode.gain,
-          //   note.start,
-          //   note.duration
-          // );
 
           osc.connect(gainNode).connect(destination);
           osc.start(note.start);

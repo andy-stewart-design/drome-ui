@@ -87,40 +87,41 @@ abstract class Instrument<T> {
     type: FilterType,
     input: DromeArray<number> | LFO | Envelope
   ) {
+    let frequency: number;
+    let frequencies: DromeArray<number>;
+
     if (input instanceof LFO) {
-      const frequency = input.value;
-      const frequencies = new DromeArray([[frequency]]);
-      const node = new BiquadFilterNode(this.ctx, { type, frequency });
-      this._filterMap.set(type, { node, frequencies });
+      frequency = input.value;
+      frequencies = new DromeArray([[frequency]]);
       this._lfoMap.set(type, input);
     } else if (input instanceof Envelope) {
-      const frequency = input.startValue;
-      const frequencies = new DromeArray([[frequency]]);
-      const node = new BiquadFilterNode(this.ctx, { type, frequency });
-      this._filterMap.set(type, { node, frequencies });
+      frequency = input.startValue;
+      frequencies = new DromeArray([[frequency]]);
       this._envMap.set(type, input);
     } else {
-      const frequency = input.at(0, 0);
-      const node = new BiquadFilterNode(this.ctx, { type, frequency });
-      this._filterMap.set(type, { node, frequencies: input });
+      frequency = input.at(0, 0);
+      frequencies = input;
     }
+
+    const node = new BiquadFilterNode(this.ctx, { type, frequency });
+    this._filterMap.set(type, { node, frequencies });
   }
 
   private createFilterEnvelope(type: FilterType, max: number, adsr: number[]) {
     const filter = this._filterMap.get(type);
 
     if (!filter) {
-      console.warn(
-        `[DROME] must create a ${type} filter before setting its envelope`
-      );
+      const msg = `[DROME] must create a ${type} filter before setting its envelope`;
+      console.warn(msg);
       return this;
     }
 
-    const env = new Envelope(max, filter.frequencies.at(0, 0), 30)
+    const env = new Envelope(filter.frequencies.at(0, 0), max, 30)
       .a(adsr[0] ?? 0.125)
       .d(adsr[1] ?? 0.125)
       .s(adsr[2] ?? 1)
       .r(adsr[3] ?? 0.01);
+
     this._envMap.set(type, env);
   }
 
@@ -132,11 +133,12 @@ abstract class Instrument<T> {
   ) {
     const env = this._envMap.get("detune");
     const lfo = this._lfoMap.get("detune");
-    if (env) {
-      env.apply(node.detune, note.start, note.duration - 0.001);
-    } else if (lfo) {
+
+    if (lfo) {
       if (lfo.paused) lfo.create().connect(node.detune).start(note.start);
       else lfo.connect(node.detune);
+    } else if (env) {
+      env.apply(node.detune, note.start, note.duration - 0.001);
     } else {
       node.detune.value = this._detune.at(cycleIndex, chordIndex);
     }
@@ -151,19 +153,18 @@ abstract class Instrument<T> {
     return Array.from(this._filterMap.entries()).map(([type, filter]) => {
       const lfo = this._lfoMap.get(type);
       const env = this._envMap.get(type);
+      const target = filter.node.frequency;
 
       if (lfo) {
-        lfo.create().connect(filter.node.frequency).start(startTime);
+        lfo.create().connect(target).start(startTime);
       } else if (env) {
         for (let i = 0; i < notes.length; i++) {
           const note = notes[i];
           if (isNullish(note)) continue;
-          env.apply(filter.node.frequency, note.start, note.duration - 0.001);
+          env.apply(target, note.start, note.duration - 0.001);
         }
       } else {
-        const target = filter.node.frequency;
         const steps = filter.frequencies.at(cycleIndex);
-
         applySteppedRamp({ target, startTime, duration, steps });
       }
 
@@ -179,19 +180,18 @@ abstract class Instrument<T> {
   ) {
     const lfo = this._lfoMap.get("pan");
     const env = this._envMap.get("pan");
+    const target = this._panNode.pan;
 
     if (lfo) {
-      lfo.create().connect(this._panNode.pan).start(startTime);
+      lfo.create().connect(target).start(startTime);
     } else if (env) {
       for (let i = 0; i < notes.length; i++) {
         const note = notes[i];
         if (isNullish(note)) continue;
-        env.apply(this._panNode.pan, note.start, note.duration - 0.001);
+        env.apply(target, note.start, note.duration - 0.001);
       }
     } else {
-      const target = this._panNode.pan;
       const steps = this._pan.at(cycleIndex);
-
       applySteppedRamp({ target, startTime, duration, steps });
     }
 
