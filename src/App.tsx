@@ -21,13 +21,17 @@ const note = 48;
 // --------------------------------------------------
 // ENV: FILTER
 // const env = d.env(300, 900).adsr(0.25, 0.25, 0.5);
-// d.synth("sawtooth").env(0.05, 0.9, 0.25, 0.1).lpf(env).note(note).euclid(4, 4);
-d.synth("sawtooth")
-  .env(0.05, 0.9, 0.25, 0.1)
-  .lpf(300)
-  .lpenv(900, 0.125, 0.125, 0.5)
-  .note(note)
-  .euclid(4, 4);
+// d.synth("sawtooth")
+//   .env(0.05, 0.9, 0.25, 0.1)
+//   .lpf(d.env(300, 900).adsr(0.25, 0.25, 0.5))
+//   .note(note)
+//   .euclid(4, 4);
+// d.synth("sawtooth")
+//   .env(0.05, 0.9, 0.25, 0.1)
+//   .lpf(300)
+//   .lpenv(900, 0.125, 0.125, 0.5)
+//   .note(note)
+//   .euclid(4, 4);
 
 // --------------------------------------------------
 // ENVELOPE: GAIN
@@ -38,14 +42,15 @@ d.synth("sawtooth")
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-// const lfo = d.lfo(0.5, 1, 8).type("sine");
+const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+const lfo = d.lfo(0, 1, 4).type("sine");
 
-// d.synth("square")
-//   .lpf(800)
-//   .note([note, note + 4, note + 7, note + 11])
-//   // .pan(env)
-//   .postgain(lfo);
+d.synth("square")
+  .lpf(800)
+  .note([note])
+  // .note([note, note + 4, note + 7, note + 11])
+  // .pan(lfo);
+  .postgain(lfo);
 // // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
 // // .pan([-1, 1, -1, 1]);
 
