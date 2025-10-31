@@ -1,6 +1,4 @@
-// TODO: Create gain returns 2 gain nodes: main and base
-// --> remove base gain option and replace with "base" env that has min=0 and max=baseGain
-// --> no longer need to multiply main gain value by baseGain value
+// TODO: FINISH POSTGAIN LFO IMPLEMENTATION (TREMOLO)
 
 import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
@@ -29,8 +27,6 @@ interface InstrumentOptions<T> {
 
 abstract class Instrument<T> {
   protected _drome: Drome;
-  private _destination: AudioNode;
-  private _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
   private _baseGain: number;
@@ -45,17 +41,13 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
-  private _isConnected = false;
 
   // Method Aliases
   env: (a: number, d?: number, s?: number, r?: number) => this;
   envMode: (mode: AdsrMode) => this;
-  rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
-    this._destination = opts.destination;
-    this._connectorNode = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
     this._baseGain = opts.baseGain || 0.75;
@@ -70,7 +62,6 @@ abstract class Instrument<T> {
     this._envMap = new Map([["gain", new Envelope(0, 1).adsr(a, d, s, r)]]);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
-    this.rev = this.reverse.bind(this);
   }
 
   protected createGain(start: number, dur: number, chordIndex: number) {
@@ -146,7 +137,7 @@ abstract class Instrument<T> {
     }
   }
 
-  private applyFilters(
+  protected applyFilters(
     notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
@@ -174,7 +165,7 @@ abstract class Instrument<T> {
     });
   }
 
-  private applyPan(
+  protected applyPan(
     notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
@@ -200,7 +191,7 @@ abstract class Instrument<T> {
     return this._panNode;
   }
 
-  private applyPostgain(
+  protected applyPostgain(
     _notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
@@ -215,37 +206,6 @@ abstract class Instrument<T> {
       const steps = this._postgain.at(cycleIndex);
       applySteppedRamp({ target, startTime, duration, steps });
     }
-  }
-
-  private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
-    if (!this._isConnected) {
-      const chain = [...nodes.flat(), this._postgainNode, this._destination];
-
-      chain.forEach((node, i) => {
-        const nextNode = chain[i + 1];
-        if (nextNode) node.connect(nextNode);
-      });
-
-      this._connectorNode = chain[0];
-      this._isConnected = true;
-    }
-
-    return this._connectorNode;
-  }
-
-  note(...input: (Nullable<T> | Nullable<T>[])[]) {
-    this._cycles.note(...input);
-    return this;
-  }
-
-  euclid(pulses: number | number[], steps: number, rotation = 0) {
-    this._cycles.euclid(pulses, steps, rotation);
-    return this;
-  }
-
-  reverse() {
-    this._cycles.reverse();
-    return this;
   }
 
   gain(...v: (number | number[])[] | [Envelope]) {
@@ -361,11 +321,6 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpenv(maxValue: number, ...adsr: number[]) {
-    this.createFilterEnvelope("lowpass", maxValue, adsr);
-    return this;
-  }
-
   lpq(v: number) {
     this._filterMap
       .get("lowpass")
@@ -397,77 +352,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  beforePlay(barStart: number, barDuration: number) {
-    this._startTime = barStart;
-    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const cycle = this._cycles.at(cycleIndex);
-    const noteDuration = barDuration / cycle.length;
-    const notes: Note<T>[] = cycle.map((value, i) => {
-      if (isNullish(value)) return null;
-      return {
-        value,
-        start: barStart + i * noteDuration,
-        duration: noteDuration,
-      };
-    });
-
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
-    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-    const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
-    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
-    const destination = this.connectChain(filters, panNode);
-
-    return { notes, cycleIndex, destination };
-  }
-
-  stop(when?: number) {
-    const startTime = this._startTime ?? this.ctx.currentTime;
-    const stopTime = when ?? this.ctx.currentTime;
-    const relTime = 0.15;
-
-    if (startTime > this.ctx.currentTime) {
-      this._audioNodes.forEach((node) => node.stop());
-      this.cleanup();
-    } else {
-      this._gainNodes.forEach((node) => {
-        node.gain.cancelScheduledValues(stopTime);
-        node.gain.setValueAtTime(node.gain.value, stopTime);
-        node.gain.linearRampToValueAtTime(0, stopTime + relTime);
-      });
-
-      const handleEnded = (e: Event) => {
-        this.cleanup();
-        e.target?.removeEventListener("ended", handleEnded);
-      };
-
-      Array.from(this._audioNodes).forEach((node, i) => {
-        if (i === 0) node.addEventListener("ended", handleEnded);
-        node.stop(stopTime + relTime);
-      });
-    }
-  }
-
-  cleanup() {
-    setTimeout(() => {
-      this._gainNodes.forEach((node) => node.disconnect());
-      this._gainNodes.clear();
-      this._audioNodes.forEach((node) => node.disconnect());
-      this._audioNodes.clear();
-      this._lfoMap.forEach((lfo) => {
-        lfo.stop();
-        lfo.disconnect();
-      });
-      this._postgainNode.disconnect();
-      this._isConnected = false;
-    }, 100);
-  }
-
   get ctx() {
     return this._drome.ctx;
-  }
-
-  get type() {
-    return "rate" in this ? "sample" : "synth";
   }
 
   get _gainEnv() {
