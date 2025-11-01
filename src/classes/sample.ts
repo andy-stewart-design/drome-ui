@@ -137,7 +137,7 @@ export default class Sample extends Instrument<number> {
         this.applyDetune(src, note, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
-        const { gainNode } = this.createGain(
+        const { gainNode, baseGainNode } = this.createGain(
           note.start,
           this._cut ? note.duration : chopDuration,
           noteIndex
@@ -148,12 +148,7 @@ export default class Sample extends Instrument<number> {
         //   this._cut ? note.duration : chopDuration
         // );
 
-        const nodes = [src, gainNode, destination];
-        nodes.forEach((node, i) => {
-          const nextNode = nodes[i + 1];
-          if (nextNode) node.connect(nextNode);
-        });
-
+        src.connect(baseGainNode).connect(gainNode).connect(destination);
         src.start(note.start, chopStartTime);
         // src.stop(noteStart + endTime + 0.1);
 

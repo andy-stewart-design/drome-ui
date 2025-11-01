@@ -110,10 +110,10 @@ abstract class Instrument<T> {
     }
 
     const env = new Envelope(filter.frequencies.at(0, 0), max, 30)
-      .a(adsr[0] ?? 0.125)
-      .d(adsr[1] ?? 0.125)
-      .s(adsr[2] ?? 1)
-      .r(adsr[3] ?? 0.01);
+      .att(adsr[0] ?? 0.125)
+      .dec(adsr[1] ?? 0.125)
+      .sus(adsr[2] ?? 1).re;
+    adsr[3] ?? 0.01;
 
     this._envMap.set(type, env);
   }
@@ -242,31 +242,33 @@ abstract class Instrument<T> {
 
   adsr(a: number, d?: number, s?: number, r?: number) {
     const gainEnv = this._gainEnv;
-    gainEnv.a(a);
-    if (typeof d === "number") gainEnv.d(d);
-    if (typeof s === "number") gainEnv.s(s);
-    if (typeof r === "number") gainEnv.r(r);
+    gainEnv.att(a);
+    if (typeof d === "number") gainEnv.dec(d);
+    if (typeof s === "number") gainEnv.sus(s);
+    if (typeof r === "number") gainEnv.re;
+    r;
 
     return this;
   }
 
   att(v: number) {
-    this._gainEnv.a(v);
+    this._gainEnv.att(v);
     return this;
   }
 
   dec(v: number) {
-    this._gainEnv.d(v);
+    this._gainEnv.dec(v);
     return this;
   }
 
   sus(v: number) {
-    this._gainEnv.s(v);
+    this._gainEnv.sus(v);
     return this;
   }
 
   rel(v: number) {
-    this._gainEnv.r(v);
+    this._gainEnv.re;
+    v;
     return this;
   }
 

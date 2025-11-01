@@ -27,22 +27,22 @@ class Envelope {
     return this;
   }
 
-  a(v: number) {
+  att(v: number) {
     this._adsr.a = v;
     return this;
   }
 
-  d(v: number) {
+  dec(v: number) {
     this._adsr.d = v;
     return this;
   }
 
-  s(v: number) {
+  sus(v: number) {
     this._adsr.s = v;
     return this;
   }
 
-  r(v: number) {
+  rel(v: number) {
     this._adsr.r = v;
     return this;
   }
@@ -79,6 +79,22 @@ class Envelope {
 
   set maxValue(v: number) {
     this._maxValue = v;
+  }
+
+  get a() {
+    return this._adsr.a;
+  }
+
+  get d() {
+    return this._adsr.d;
+  }
+
+  get s() {
+    return this._adsr.s;
+  }
+
+  get r() {
+    return this._adsr.r;
   }
 }
 

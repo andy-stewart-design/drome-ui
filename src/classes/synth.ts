@@ -32,21 +32,23 @@ export default class Synth extends Instrument<number | number[]> {
           this.applyDetune(osc, note, cycleIndex, chordIndex);
           this._audioNodes.add(osc);
 
-          const { gainNode, noteEnd } = this.createGain(
+          const { gainNode, noteEnd, baseGainNode } = this.createGain(
             note.start,
             note.duration,
             chordIndex
           );
 
-          osc.connect(gainNode).connect(destination);
+          osc.connect(baseGainNode).connect(gainNode).connect(destination);
           osc.start(note.start);
           osc.stop(note.start + noteEnd);
 
           const cleanup = () => {
             osc.disconnect();
-            this._audioNodes.delete(osc);
             gainNode.disconnect();
+            baseGainNode.disconnect();
+            this._audioNodes.delete(osc);
             this._gainNodes.delete(gainNode);
+            this._gainNodes.delete(baseGainNode);
             osc.removeEventListener("ended", cleanup);
           };
 

@@ -3,8 +3,10 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-d.synth("triangle").att(0.1).rel(0.25);
-// d.synth("triangle").att(0.5).rel(1);
+// d.synth("triangle");
+// d.synth("triangle").euclid(4, 4).lpf(800).rel(0.1);
+// d.synth("triangle").att(0.1).rel(0.25);
+d.synth("triangle").euclid(4, 4).att(0.5).rel(1);
 
 // --------------------------------------------------
 // LFO: DETUNE

@@ -33,7 +33,7 @@ abstract class Instrument<T> {
   private _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
-  private _baseGain: number;
+  // private _baseGain: number;
   private _postgain: DromeArray<number>;
   private _detune: DromeArray<number> = new DromeArray([[0]]);
   private _pan: DromeArray<number> = new DromeArray([[0]]);
@@ -43,7 +43,7 @@ abstract class Instrument<T> {
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
-  protected _envMap: Map<AutomatableParam, Envelope>;
+  protected _envMap: Map<AutomatableParam | "baseGain", Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -58,7 +58,7 @@ abstract class Instrument<T> {
     this._connectorNode = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
-    this._baseGain = opts.baseGain || 0.75;
+    // this._baseGain = opts.baseGain || 0.75;
     this._postgain = new DromeArray([[1]]);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._panNode = new StereoPannerNode(this.ctx);
@@ -66,8 +66,11 @@ abstract class Instrument<T> {
     this._gainNodes = new Set();
     this._filterMap = new Map();
     this._lfoMap = new Map();
-    const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
-    this._envMap = new Map([["gain", new Envelope(0, 1).adsr(a, d, s, r)]]);
+    const { a, d, s, r } = opts.adsr ?? { a: 0.001, d: 0, s: 1, r: 0.01 };
+    this._envMap = new Map([
+      ["gain", new Envelope(0, 1).adsr(a, d, s, r)],
+      ["baseGain", new Envelope(0, opts.baseGain || 0.75).att(0.005)],
+    ]);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
     this.rev = this.reverse.bind(this);
@@ -75,14 +78,19 @@ abstract class Instrument<T> {
 
   protected createGain(start: number, dur: number, chordIndex: number) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const gain = this._gain.at(cycleIndex, chordIndex) * this._baseGain;
+    const gain = this._gain.at(cycleIndex, chordIndex);
     const gainNode = new GainNode(this.ctx, { gain });
     this._gainNodes.add(gainNode);
 
+    const baseGain = this._baseGainEnv.maxValue;
+    const baseGainNode = new GainNode(this.ctx, { gain: baseGain });
+    this._gainNodes.add(baseGainNode);
+
     if (this._gainEnv.maxValue !== gain) this._gainEnv.maxValue = gain;
     const noteEnd = this._gainEnv.apply(gainNode.gain, start, dur);
+    this._baseGainEnv.apply(baseGainNode.gain, start, dur);
 
-    return { gainNode, noteEnd };
+    return { gainNode, noteEnd, baseGainNode };
   }
 
   private createFilter(
@@ -119,10 +127,10 @@ abstract class Instrument<T> {
     }
 
     const env = new Envelope(filter.frequencies.at(0, 0), max, 30)
-      .a(adsr[0] ?? 0.125)
-      .d(adsr[1] ?? 0.125)
-      .s(adsr[2] ?? 1)
-      .r(adsr[3] ?? 0.01);
+      .att(adsr[0] ?? 0.125)
+      .dec(adsr[1] ?? 0.125)
+      .sus(adsr[2] ?? 1)
+      .rel(adsr[3] ?? 0.01);
 
     this._envMap.set(type, env);
   }
@@ -281,32 +289,37 @@ abstract class Instrument<T> {
   }
 
   adsr(a: number, d?: number, s?: number, r?: number) {
-    const gainEnv = this._gainEnv;
-    gainEnv.a(a);
-    if (typeof d === "number") gainEnv.d(d);
-    if (typeof s === "number") gainEnv.s(s);
-    if (typeof r === "number") gainEnv.r(r);
+    this._gainEnv.att(a);
+    if (this._baseGainEnv.a < a) this._baseGainEnv.att(a);
+    if (typeof d === "number") this._gainEnv.dec(d);
+    if (typeof s === "number") this._gainEnv.sus(s);
+    if (typeof r === "number") {
+      this._gainEnv.rel(r);
+      this._baseGainEnv.rel(r);
+    }
 
     return this;
   }
 
   att(v: number) {
-    this._gainEnv.a(v);
+    this._gainEnv.att(v);
+    if (this._baseGainEnv.a < v) this._baseGainEnv.att(v);
     return this;
   }
 
   dec(v: number) {
-    this._gainEnv.d(v);
+    this._gainEnv.dec(v);
     return this;
   }
 
   sus(v: number) {
-    this._gainEnv.s(v);
+    this._gainEnv.sus(v);
     return this;
   }
 
   rel(v: number) {
-    this._gainEnv.r(v);
+    this._gainEnv.rel(v);
+    this._baseGainEnv.rel(v);
     return this;
   }
 
@@ -473,7 +486,17 @@ abstract class Instrument<T> {
   get _gainEnv() {
     const gainEnv = this._envMap.get("gain");
     if (!gainEnv) {
-      throw new Error("[DROME] cannot access gainEnv before it has been set");
+      const msg = "[DROME] cannot access gain env before it has been set";
+      throw new Error(msg);
+    }
+    return gainEnv;
+  }
+
+  get _baseGainEnv() {
+    const gainEnv = this._envMap.get("baseGain");
+    if (!gainEnv) {
+      const msg = "[DROME] cannot access baseGain env before it has been set";
+      throw new Error(msg);
     }
     return gainEnv;
   }
