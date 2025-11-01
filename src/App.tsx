@@ -3,6 +3,9 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
+d.synth("triangle").att(0.1).rel(0.25);
+// d.synth("triangle").att(0.5).rel(1);
+
 // --------------------------------------------------
 // LFO: DETUNE
 // const lfo = d.lfo(-100, 100, 4).type("sine");
@@ -42,15 +45,15 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-const lfo = d.lfo(0, 1, 4).type("sine");
+// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+// const lfo = d.lfo(0, 1, 4).type("sine");
 
-d.synth("square")
-  .lpf(800)
-  .note([note])
-  // .note([note, note + 4, note + 7, note + 11])
-  // .pan(lfo);
-  .postgain(lfo);
+// d.synth("square")
+//   .lpf(800)
+//   .note([note])
+//   // .note([note, note + 4, note + 7, note + 11])
+//   // .pan(lfo);
+//   .postgain(lfo);
 // // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
 // // .pan([-1, 1, -1, 1]);
 
