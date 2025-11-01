@@ -43,7 +43,7 @@ abstract class Instrument<T> {
   protected readonly _gainNodes: Set<GainNode>;
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
-  protected _envMap: Map<AutomatableParam | "baseGain", Envelope>;
+  protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -66,10 +66,9 @@ abstract class Instrument<T> {
     this._gainNodes = new Set();
     this._filterMap = new Map();
     this._lfoMap = new Map();
-    const { a, d, s, r } = opts.adsr ?? { a: 0.001, d: 0, s: 1, r: 0.01 };
+    const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
     this._envMap = new Map([
-      ["gain", new Envelope(0, 1).adsr(a, d, s, r)],
-      ["baseGain", new Envelope(0, opts.baseGain || 0.75).att(0.005)],
+      ["gain", new Envelope(0, opts.baseGain || 0.75).adsr(a, d, s, r)],
     ]);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
@@ -78,19 +77,18 @@ abstract class Instrument<T> {
 
   protected createGain(start: number, dur: number, chordIndex: number) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const gain = this._gain.at(cycleIndex, chordIndex);
-    const gainNode = new GainNode(this.ctx, { gain });
-    this._gainNodes.add(gainNode);
+    const effectGain = new GainNode(this.ctx, {
+      gain: this._gain.at(cycleIndex, chordIndex),
+    });
+    const envGain = new GainNode(this.ctx, {
+      gain: this._gainEnv.maxValue,
+    });
 
-    const baseGain = this._baseGainEnv.maxValue;
-    const baseGainNode = new GainNode(this.ctx, { gain: baseGain });
-    this._gainNodes.add(baseGainNode);
+    const noteEnd = this._gainEnv.apply(envGain.gain, start, dur);
+    this._gainNodes.add(effectGain);
+    this._gainNodes.add(envGain);
 
-    if (this._gainEnv.maxValue !== gain) this._gainEnv.maxValue = gain;
-    const noteEnd = this._gainEnv.apply(gainNode.gain, start, dur);
-    this._baseGainEnv.apply(baseGainNode.gain, start, dur);
-
-    return { gainNode, noteEnd, baseGainNode };
+    return { effectGain, noteEnd, envGain };
   }
 
   private createFilter(
@@ -290,20 +288,15 @@ abstract class Instrument<T> {
 
   adsr(a: number, d?: number, s?: number, r?: number) {
     this._gainEnv.att(a);
-    if (this._baseGainEnv.a < a) this._baseGainEnv.att(a);
     if (typeof d === "number") this._gainEnv.dec(d);
     if (typeof s === "number") this._gainEnv.sus(s);
-    if (typeof r === "number") {
-      this._gainEnv.rel(r);
-      this._baseGainEnv.rel(r);
-    }
+    if (typeof r === "number") this._gainEnv.rel(r);
 
     return this;
   }
 
   att(v: number) {
     this._gainEnv.att(v);
-    if (this._baseGainEnv.a < v) this._baseGainEnv.att(v);
     return this;
   }
 
@@ -319,7 +312,6 @@ abstract class Instrument<T> {
 
   rel(v: number) {
     this._gainEnv.rel(v);
-    this._baseGainEnv.rel(v);
     return this;
   }
 
@@ -483,17 +475,17 @@ abstract class Instrument<T> {
     return "rate" in this ? "sample" : "synth";
   }
 
+  // get _gainEnv() {
+  //   const gainEnv = this._envMap.get("gain");
+  //   if (!gainEnv) {
+  //     const msg = "[DROME] cannot access gain env before it has been set";
+  //     throw new Error(msg);
+  //   }
+  //   return gainEnv;
+  // }
+
   get _gainEnv() {
     const gainEnv = this._envMap.get("gain");
-    if (!gainEnv) {
-      const msg = "[DROME] cannot access gain env before it has been set";
-      throw new Error(msg);
-    }
-    return gainEnv;
-  }
-
-  get _baseGainEnv() {
-    const gainEnv = this._envMap.get("baseGain");
     if (!gainEnv) {
       const msg = "[DROME] cannot access baseGain env before it has been set";
       throw new Error(msg);

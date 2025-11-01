@@ -137,26 +137,21 @@ export default class Sample extends Instrument<number> {
         this.applyDetune(src, note, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
-        const { gainNode, baseGainNode } = this.createGain(
+        const { effectGain, envGain } = this.createGain(
           note.start,
           this._cut ? note.duration : chopDuration,
           noteIndex
         );
-        // this.applyGainEnv(
-        //   gainNode.gain,
-        //   note.start,
-        //   this._cut ? note.duration : chopDuration
-        // );
 
-        src.connect(baseGainNode).connect(gainNode).connect(destination);
+        src.connect(envGain).connect(effectGain).connect(destination);
         src.start(note.start, chopStartTime);
         // src.stop(noteStart + endTime + 0.1);
 
         const cleanup = () => {
           src.disconnect();
           this._audioNodes.delete(src);
-          gainNode.disconnect();
-          this._gainNodes.delete(gainNode);
+          effectGain.disconnect();
+          this._gainNodes.delete(effectGain);
           src.removeEventListener("ended", cleanup);
         };
 
