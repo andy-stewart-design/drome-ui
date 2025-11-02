@@ -93,10 +93,10 @@ const lfo = d.lfo(0, 1, 8).type("sine");
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-// d.sample("hh:1").bank("tr909").euclid(8, 8);
-d.sample("hh").bank("tr909").euclid(16, 16);
-d.sample("bd:3").bank("tr909").euclid(4, 4);
-d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
+d.sample("hh").bank("tr909").euclid(4, 4);
+// d.sample("hh").bank("tr909").euclid(16, 16);
+// d.sample("bd:3").bank("tr909").euclid(4, 4);
+// d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------
 // // SAMPLES: START POINT

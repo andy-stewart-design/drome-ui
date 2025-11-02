@@ -55,6 +55,7 @@ class Envelope {
       duration: Math.max(duration, 0.25),
       mode: this._mode,
     });
+    console.log(envTimes);
 
     applyAdsr({
       target,
