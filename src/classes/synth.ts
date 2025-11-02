@@ -38,7 +38,7 @@ export default class Synth extends Instrument<number | number[]> {
             chordIndex
           );
 
-          osc.connect(envGain).connect(effectGain).connect(destination);
+          osc.connect(effectGain).connect(envGain).connect(destination);
           osc.start(note.start);
           osc.stop(note.start + noteEnd);
 

@@ -3,7 +3,10 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-// d.synth("triangle");
+const env = d.env(0, 1).adsr(0.05, 1, 0);
+const lfo = d.lfo(0.25, 1, 4).type("sine");
+// d.synth("triangle").gain(env).gain(lfo);
+d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 // d.synth("triangle").euclid(4, 4).lpf(800).rel(0.1);
 // d.synth("triangle").att(0.1).rel(0.25);
 // d.synth("triangle").euclid(4, 4).att(0.1).rel(0.375).lpf(800);
@@ -20,8 +23,8 @@ const note = 48;
 
 // --------------------------------------------------
 // LFO: FILTER
-const lfo = d.lfo(300, 900, 16).type("sine");
-d.synth("sawtooth").env(0.005, 0.9, 0.25, 0.1).bpf(lfo).note(note).euclid(4, 4);
+// const lfo = d.lfo(300, 900, 16).type("sine");
+// d.synth("sawtooth").env(0.005, 0.9, 0.25, 0.1).bpf(lfo).note(note).euclid(4, 4);
 
 // --------------------------------------------------
 // ENV: FILTER
@@ -88,8 +91,8 @@ d.synth("sawtooth").env(0.005, 0.9, 0.25, 0.1).bpf(lfo).note(note).euclid(4, 4);
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-d.sample("bd:3").bank("tr909").euclid(4, 4);
-d.sample("cp:3").bank("tr808").euclid(2, 4, 1).postgain(0.5);
+// d.sample("bd:3").bank("tr909").euclid(4, 4);
+// d.sample("cp:3").bank("tr808").euclid(2, 4, 1).postgain(0.5);
 
 // --------------------------------------------------
 // // SAMPLES: START POINT
