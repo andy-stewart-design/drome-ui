@@ -52,7 +52,7 @@ class Envelope {
       a: this._adsr.a,
       d: this._adsr.d,
       r: this._adsr.r,
-      duration,
+      duration: Math.max(duration, 0.25),
       mode: this._mode,
     });
 

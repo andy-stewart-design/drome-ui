@@ -3,10 +3,10 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-const env = d.env(0, 1).adsr(0.05, 1, 0);
-const lfo = d.lfo(0.25, 1, 4).type("sine");
+// const env = d.env(0, 1).adsr(0.05, 1, 0);
+// const lfo = d.lfo(0.25, 1, 4).type("sine");
 // d.synth("triangle").gain(env).gain(lfo);
-d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
+// d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 // d.synth("triangle").euclid(4, 4).lpf(800).rel(0.1);
 // d.synth("triangle").att(0.1).rel(0.25);
 // d.synth("triangle").euclid(4, 4).att(0.1).rel(0.375).lpf(800);
@@ -50,25 +50,27 @@ d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-// const lfo = d.lfo(0, 1, 4).type("sine");
+const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+const lfo = d.lfo(0, 1, 8).type("sine");
 
 // d.synth("square")
 //   .lpf(800)
 //   .note([note])
-//   // .note([note, note + 4, note + 7, note + 11])
-//   // .pan(lfo);
-//   .postgain(lfo);
-// // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
-// // .pan([-1, 1, -1, 1]);
+//   //   // .note([note, note + 4, note + 7, note + 11])
+//   // .pan([-1, 1]);
+// // // .postgain(lfo);
+// .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
+// // // .pan([-1, 1, -1, 1]);
 
 // d.sample("hh")
+//   .bank("tr909")
 //   .euclid(16, 16)
+//   .gain([1, 0.5])
 //   .pan(lfo)
 //   // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
 //   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
-//   // .env(0.05, 0, 1, 0.05)
-//   .postgain(0.5);
+//   .env(0.05, 0, 1, 0.05)
+//   .postgain(0.375);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -91,8 +93,10 @@ d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-// d.sample("bd:3").bank("tr909").euclid(4, 4);
-// d.sample("cp:3").bank("tr808").euclid(2, 4, 1).postgain(0.5);
+// d.sample("hh:1").bank("tr909").euclid(8, 8);
+d.sample("hh").bank("tr909").euclid(16, 16);
+d.sample("bd:3").bank("tr909").euclid(4, 4);
+d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------
 // // SAMPLES: START POINT
