@@ -3,9 +3,9 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-// const env = d.env(0, 1).adsr(0.05, 1, 0);
-// const lfo = d.lfo(0.25, 1, 4).type("sine");
-// d.synth("triangle").gain(env).gain(lfo);
+const env = d.env(0, 1).adsr(0.05, 1, 0);
+const lfo = d.lfo(0.01, 1, 8).type("sine");
+d.synth("triangle").gain(env).gain(lfo);
 // d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 // d.synth("triangle").euclid(4, 4).lpf(800).rel(0.1);
 // d.synth("triangle").att(0.1).rel(0.25);
@@ -50,27 +50,30 @@ const note = 48;
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
-const lfo = d.lfo(0, 1, 8).type("sine");
+// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+// const lfo = d.lfo(0, 1, 8).type("sine");
 
 // d.synth("square")
-//   .lpf(800)
+//   .lpf(400)
 //   .note([note])
-//   //   // .note([note, note + 4, note + 7, note + 11])
-//   // .pan([-1, 1]);
-// // // .postgain(lfo);
+//   .euclid(8, 8)
+//   .att(0.1)
+//   .rel(0.1)
+//   // .note([note, note + 4, note + 7, note + 11])
+//   .pan(env);
+// .postgain(lfo);
 // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
-// // // .pan([-1, 1, -1, 1]);
+// .pan([-1, 1, -1, 1]);
 
-d.sample("hh")
-  .bank("tr909")
-  .euclid(16, 16)
-  .gain([1, 0.5])
-  .pan(lfo)
-  // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
-  // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
-  .env(0.05, 0, 1, 0.05)
-  .postgain(0.75);
+// d.sample("hh")
+//   .bank("tr909")
+//   .euclid(16, 16)
+//   .gain([1, 0.5])
+//   .pan(lfo)
+//   // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
+//   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
+//   .env(0.05, 0, 1, 0.05)
+//   .postgain(0.75);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -83,7 +86,7 @@ d.sample("hh")
 // ENVELOPE: FILTERS
 // d.synth("sawtooth")
 //   .bpf(400)
-//   .bpenv(1600, 0.25, 0.25, 0.5, 0.1)
+//   .bpenv(1600, 0.25, 0.25, 0.25, 0.1)
 //   .note([note, note + 4, note + 7, note + 11]);
 
 // d.synth("sawtooth", "sine")
