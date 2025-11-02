@@ -1,3 +1,5 @@
+// TODO: FINISH POSTGAIN LFO IMPLEMENTATION (TREMOLO)
+
 import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
@@ -25,10 +27,9 @@ interface InstrumentOptions<T> {
 
 abstract class Instrument<T> {
   protected _drome: Drome;
-  private _destination: AudioNode;
-  private _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
+  private _baseGain: number;
   private _postgain: DromeArray<number>;
   private _detune: DromeArray<number> = new DromeArray([[0]]);
   private _pan: DromeArray<number> = new DromeArray([[0]]);
@@ -40,19 +41,16 @@ abstract class Instrument<T> {
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
-  private _isConnected = false;
 
   // Method Aliases
   env: (a: number, d?: number, s?: number, r?: number) => this;
   envMode: (mode: AdsrMode) => this;
-  rev: () => this;
 
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
-    this._destination = opts.destination;
-    this._connectorNode = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
+    this._baseGain = opts.baseGain || 0.75;
     this._postgain = new DromeArray([[1]]);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._panNode = new StereoPannerNode(this.ctx);
@@ -61,33 +59,21 @@ abstract class Instrument<T> {
     this._filterMap = new Map();
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
-    this._envMap = new Map([
-      ["gain", new Envelope(0, opts.baseGain || 0.75).adsr(a, d, s, r)],
-    ]);
+    this._envMap = new Map([["gain", new Envelope(0, 1).adsr(a, d, s, r)]]);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
-    this.rev = this.reverse.bind(this);
   }
 
   protected createGain(start: number, dur: number, chordIndex: number) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const lfo = this._lfoMap.get("gain");
-    const effectGain = new GainNode(this.ctx, {
-      gain: this._gain.at(cycleIndex, chordIndex),
-    });
-    const envGain = new GainNode(this.ctx, {
-      gain: this._gainEnv.maxValue,
-    });
+    const gain = this._gain.at(cycleIndex, chordIndex) * this._baseGain;
+    const gainNode = new GainNode(this.ctx, { gain });
+    this._gainNodes.add(gainNode);
 
-    const noteEnd = this._gainEnv.apply(envGain.gain, start, dur);
+    if (this._gainEnv.maxValue !== gain) this._gainEnv.maxValue = gain;
+    const noteEnd = this._gainEnv.apply(gainNode.gain, start, dur);
 
-    if (lfo?.paused) lfo.create().connect(effectGain.gain).start(start);
-    else if (lfo) lfo.connect(effectGain.gain);
-
-    this._gainNodes.add(envGain);
-    this._gainNodes.add(effectGain);
-
-    return { envGain, effectGain, noteEnd };
+    return { gainNode, noteEnd };
   }
 
   private createFilter(
@@ -126,8 +112,8 @@ abstract class Instrument<T> {
     const env = new Envelope(filter.frequencies.at(0, 0), max, 30)
       .att(adsr[0] ?? 0.125)
       .dec(adsr[1] ?? 0.125)
-      .sus(adsr[2] ?? 1)
-      .rel(adsr[3] ?? 0.01);
+      .sus(adsr[2] ?? 1).re;
+    adsr[3] ?? 0.01;
 
     this._envMap.set(type, env);
   }
@@ -151,7 +137,7 @@ abstract class Instrument<T> {
     }
   }
 
-  private applyFilters(
+  protected applyFilters(
     notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
@@ -179,7 +165,7 @@ abstract class Instrument<T> {
     });
   }
 
-  private applyPan(
+  protected applyPan(
     notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
@@ -205,55 +191,26 @@ abstract class Instrument<T> {
     return this._panNode;
   }
 
-  private applyPostgain(
+  protected applyPostgain(
     _notes: Note<T>[],
     cycleIndex: number,
     startTime: number,
     duration: number
   ) {
-    const target = this._postgainNode.gain;
-    const steps = this._postgain.at(cycleIndex);
-    applySteppedRamp({ target, startTime, duration, steps });
-  }
+    const lfo = this._lfoMap.get("postgain");
 
-  private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
-    if (!this._isConnected) {
-      const chain = [...nodes.flat(), this._postgainNode, this._destination];
-
-      chain.forEach((node, i) => {
-        const nextNode = chain[i + 1];
-        if (nextNode) node.connect(nextNode);
-      });
-
-      this._connectorNode = chain[0];
-      this._isConnected = true;
+    if (lfo) {
+      lfo.create().connect(this._postgainNode.gain).start(startTime);
+    } else {
+      const target = this._postgainNode.gain;
+      const steps = this._postgain.at(cycleIndex);
+      applySteppedRamp({ target, startTime, duration, steps });
     }
-
-    return this._connectorNode;
   }
 
-  note(...input: (Nullable<T> | Nullable<T>[])[]) {
-    this._cycles.note(...input);
-    return this;
-  }
-
-  euclid(pulses: number | number[], steps: number, rotation = 0) {
-    this._cycles.euclid(pulses, steps, rotation);
-    return this;
-  }
-
-  reverse() {
-    this._cycles.reverse();
-    return this;
-  }
-
-  gain(...v: (number | number[])[] | [LFO] | [Envelope]) {
-    if (isLfoTuple(v)) {
-      this._gain.note(v[0].value);
-      this._lfoMap.set("gain", v[0]);
-    } else if (isEnvTuple(v)) {
+  gain(...v: (number | number[])[] | [Envelope]) {
+    if (isEnvTuple(v)) {
       this._gain.note(v[0].maxValue);
-      v[0].maxValue = this._gainEnv.maxValue;
       this._envMap.set("gain", v[0]);
     } else {
       this._gain.note(...v);
@@ -261,16 +218,20 @@ abstract class Instrument<T> {
     return this;
   }
 
-  postgain(...v: (number | number[])[]) {
-    const firstValue = v.reduce<number>((acc, item) => {
-      if (acc !== 1) return acc;
-      if (typeof item === "number") return item;
-      if (Array.isArray(item) && item.length > 0) return item[0];
-      return acc;
-    }, 1);
-    this._postgainNode.gain.value = firstValue;
-    this._postgain.note(...v);
-
+  postgain(...v: (number | number[])[] | [LFO]) {
+    if (isLfoTuple(v)) {
+      this._postgainNode.gain.value = v[0].value;
+      this._lfoMap.set("postgain", v[0]);
+    } else {
+      const firstValue = v.reduce<number>((acc, item) => {
+        if (acc !== 1) return acc;
+        if (typeof item === "number") return item;
+        if (Array.isArray(item) && item.length > 0) return item[0];
+        return acc;
+      }, 1);
+      this._postgainNode.gain.value = firstValue;
+      this._postgain.note(...v);
+    }
     return this;
   }
 
@@ -280,10 +241,12 @@ abstract class Instrument<T> {
   }
 
   adsr(a: number, d?: number, s?: number, r?: number) {
-    this._gainEnv.att(a);
-    if (typeof d === "number") this._gainEnv.dec(d);
-    if (typeof s === "number") this._gainEnv.sus(s);
-    if (typeof r === "number") this._gainEnv.rel(r);
+    const gainEnv = this._gainEnv;
+    gainEnv.att(a);
+    if (typeof d === "number") gainEnv.dec(d);
+    if (typeof s === "number") gainEnv.sus(s);
+    if (typeof r === "number") gainEnv.re;
+    r;
 
     return this;
   }
@@ -304,7 +267,8 @@ abstract class Instrument<T> {
   }
 
   rel(v: number) {
-    this._gainEnv.rel(v);
+    this._gainEnv.re;
+    v;
     return this;
   }
 
@@ -359,11 +323,6 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpenv(maxValue: number, ...adsr: number[]) {
-    this.createFilterEnvelope("lowpass", maxValue, adsr);
-    return this;
-  }
-
   lpq(v: number) {
     this._filterMap
       .get("lowpass")
@@ -395,87 +354,15 @@ abstract class Instrument<T> {
     return this;
   }
 
-  beforePlay(barStart: number, barDuration: number) {
-    this._startTime = barStart;
-    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const cycle = this._cycles.at(cycleIndex);
-    const noteDuration = barDuration / cycle.length;
-    const notes: Note<T>[] = cycle.map((value, i) => {
-      if (isNullish(value)) return null;
-      return {
-        value,
-        start: barStart + i * noteDuration,
-        duration: noteDuration,
-      };
-    });
-
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
-    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-    const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
-    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
-    const destination = this.connectChain(filters, panNode);
-
-    return { notes, cycleIndex, destination };
-  }
-
-  stop(when?: number) {
-    const startTime = this._startTime ?? this.ctx.currentTime;
-    const stopTime = when ?? this.ctx.currentTime;
-    const relTime = 0.15;
-
-    if (startTime > this.ctx.currentTime) {
-      this._audioNodes.forEach((node) => node.stop());
-      this.cleanup();
-    } else {
-      this._gainNodes.forEach((node) => {
-        node.gain.cancelScheduledValues(stopTime);
-        node.gain.setValueAtTime(node.gain.value, stopTime);
-        node.gain.linearRampToValueAtTime(0, stopTime + relTime);
-      });
-
-      const handleEnded = (e: Event) => {
-        this.cleanup();
-        e.target?.removeEventListener("ended", handleEnded);
-      };
-
-      Array.from(this._audioNodes).forEach((node, i) => {
-        if (i === 0) node.addEventListener("ended", handleEnded);
-        node.stop(stopTime + relTime);
-      });
-    }
-  }
-
-  cleanup() {
-    setTimeout(() => {
-      this._gainNodes.forEach((node) => node.disconnect());
-      this._gainNodes.clear();
-      this._audioNodes.forEach((node) => node.disconnect());
-      this._audioNodes.clear();
-      this._lfoMap.forEach((lfo) => {
-        lfo.stop();
-        lfo.disconnect();
-      });
-      this._postgainNode.disconnect();
-      this._isConnected = false;
-    }, 100);
-  }
-
   get ctx() {
     return this._drome.ctx;
   }
 
-  get type() {
-    return "rate" in this ? "sample" : "synth";
-  }
-
   get _gainEnv() {
     const gainEnv = this._envMap.get("gain");
-
     if (!gainEnv) {
-      const msg = "[DROME] cannot access baseGain env before it has been set";
-      throw new Error(msg);
+      throw new Error("[DROME] cannot access gainEnv before it has been set");
     }
-
     return gainEnv;
   }
 }

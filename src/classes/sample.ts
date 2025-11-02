@@ -60,6 +60,11 @@ export default class Sample extends Instrument<number> {
     return this;
   }
 
+  begin(...input: (Nullable<number> | Nullable<number>[])[]) {
+    this._cycles.note(...input);
+    return this;
+  }
+
   chop(numChops: number, ...input: (number | number[])[]) {
     const isArray = Array.isArray;
     const convert = (n: Nullable<number>) => {
@@ -128,32 +133,25 @@ export default class Sample extends Instrument<number> {
             this._playbackRate < 0 ? flipBuffer(this.ctx, buffer) : buffer,
           playbackRate: playbackRate,
           loop: this._loop,
-          detune: this._detune.at(cycleIndex, noteIndex),
         });
-        this.appplyDetune(src, barStart, cycleIndex, noteIndex);
+        this.applyDetune(src, note, cycleIndex, noteIndex);
         this._audioNodes.add(src);
 
-        const gainNode = this.createGain(noteIndex);
-        this.applyGain(
-          gainNode.gain,
+        const { effectGain, envGain } = this.createGain(
           note.start,
-          this._cut ? note.duration : chopDuration
+          this._cut ? note.duration : chopDuration,
+          noteIndex
         );
 
-        const nodes = [src, gainNode, destination];
-        nodes.forEach((node, i) => {
-          const nextNode = nodes[i + 1];
-          if (nextNode) node.connect(nextNode);
-        });
-
+        src.connect(envGain).connect(effectGain).connect(destination);
         src.start(note.start, chopStartTime);
         // src.stop(noteStart + endTime + 0.1);
 
         const cleanup = () => {
           src.disconnect();
           this._audioNodes.delete(src);
-          gainNode.disconnect();
-          this._gainNodes.delete(gainNode);
+          effectGain.disconnect();
+          this._gainNodes.delete(effectGain);
           src.removeEventListener("ended", cleanup);
         };
 

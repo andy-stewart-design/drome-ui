@@ -1,4 +1,5 @@
 import AudioClock from "./audio-clock";
+import Envelope from "./envelope";
 import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
@@ -72,7 +73,13 @@ class Drome {
     return sample;
   }
 
-  lfo(value: number, depth: number, speed: number) {
+  env(maxValue: number, startValue = 0, endValue?: number) {
+    return new Envelope(maxValue, startValue, endValue);
+  }
+
+  lfo(minValue: number, maxValue: number, speed: number) {
+    const value = (maxValue + minValue) / 2;
+    const depth = maxValue - value;
     const bpm = this.beatsPerMin;
     return new LFO(this.ctx, { value, depth, speed, bpm });
   }

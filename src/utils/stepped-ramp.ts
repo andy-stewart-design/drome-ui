@@ -13,8 +13,8 @@ function applySteppedRamp(opts: SteppedRampOptions) {
   const { target, steps, fade = 0.001, startTime, duration } = opts;
   const stepLength = (duration - fade * steps.length) / steps.length;
 
-  target.cancelScheduledValues(startTime);
-  target.setValueAtTime(target.value, startTime);
+  // target.cancelScheduledValues(startTime);
+  // target.linearRampToValueAtTime(target.value, startTime + fade);
 
   for (let i = 0; i < steps.length; i++) {
     const step = steps[i];

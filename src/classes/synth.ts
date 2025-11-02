@@ -29,25 +29,26 @@ export default class Synth extends Instrument<number | number[]> {
             frequency: midiToFrequency(midiNote),
             type,
           });
-          this.appplyDetune(osc, barStart, cycleIndex, chordIndex);
+          this.applyDetune(osc, note, cycleIndex, chordIndex);
           this._audioNodes.add(osc);
 
-          const gainNode = this.createGain(chordIndex);
-          const noteEnd = this.applyGain(
-            gainNode.gain,
+          const { effectGain, noteEnd, envGain } = this.createGain(
             note.start,
-            note.duration
+            note.duration,
+            chordIndex
           );
 
-          osc.connect(gainNode).connect(destination);
+          osc.connect(effectGain).connect(envGain).connect(destination);
           osc.start(note.start);
           osc.stop(note.start + noteEnd);
 
           const cleanup = () => {
             osc.disconnect();
+            effectGain.disconnect();
+            envGain.disconnect();
             this._audioNodes.delete(osc);
-            gainNode.disconnect();
-            this._gainNodes.delete(gainNode);
+            this._gainNodes.delete(effectGain);
+            this._gainNodes.delete(envGain);
             osc.removeEventListener("ended", cleanup);
           };
 

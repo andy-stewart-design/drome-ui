@@ -26,8 +26,8 @@ function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
     const nA = adsrSum > 1 ? a / adsrSum : a;
     const nD = adsrSum > 1 ? d / adsrSum : d;
 
-    const att = nA * duration;
-    const dec = att + nD * duration;
+    const att = nA * (duration - 0.001);
+    const dec = att + nD * (duration - 0.001);
     const rStart = duration;
     const rEnd = duration + r * duration;
 
@@ -57,7 +57,7 @@ function applyAdsr({
   endValue = 0,
 }: applyAdsrArgs) {
   target.cancelScheduledValues(startTime);
-  target.setValueAtTime(startValue, startTime);
+  target.linearRampToValueAtTime(startValue, startTime + 0.0001);
   target.linearRampToValueAtTime(maxValue, startTime + envTimes.a);
   target.linearRampToValueAtTime(sustainValue, startTime + envTimes.d);
   target.setValueAtTime(sustainValue, startTime + envTimes.r.start);
