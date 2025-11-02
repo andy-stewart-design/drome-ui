@@ -26,8 +26,8 @@ function getAdsrTimes({ a, d, r, duration, mode }: getAdsrTimesArgs) {
     const nA = adsrSum > 1 ? a / adsrSum : a;
     const nD = adsrSum > 1 ? d / adsrSum : d;
 
-    const att = nA * duration - 0.001;
-    const dec = att + nD * duration - 0.001;
+    const att = nA * (duration - 0.001);
+    const dec = att + nD * (duration - 0.001);
     const rStart = duration;
     const rEnd = duration + r * duration;
 

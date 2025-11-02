@@ -62,15 +62,15 @@ const lfo = d.lfo(0, 1, 8).type("sine");
 // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
 // // // .pan([-1, 1, -1, 1]);
 
-// d.sample("hh")
-//   .bank("tr909")
-//   .euclid(16, 16)
-//   .gain([1, 0.5])
-//   .pan(lfo)
-//   // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
-//   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
-//   .env(0.05, 0, 1, 0.05)
-//   .postgain(0.375);
+d.sample("hh")
+  .bank("tr909")
+  .euclid(16, 16)
+  .gain([1, 0.5])
+  .pan(lfo)
+  // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
+  // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
+  .env(0.05, 0, 1, 0.05)
+  .postgain(0.75);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -93,8 +93,8 @@ const lfo = d.lfo(0, 1, 8).type("sine");
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-d.sample("hh").bank("tr909").euclid(4, 4);
-// d.sample("hh").bank("tr909").euclid(16, 16);
+// d.sample("hh").bank("tr909").euclid(4, 4);
+// d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
 // d.sample("bd:3").bank("tr909").euclid(4, 4);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
