@@ -407,7 +407,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  reverb(mix = 0.2, decay = 1, lpfStart?: number, lpfEnd?: number) {
+  reverb(mix = 0.2, decay = 1, lpfStart = 1600, lpfEnd = 1000) {
     const reverb = new ReverbEffect(this._drome, {
       mix,
       decay,
