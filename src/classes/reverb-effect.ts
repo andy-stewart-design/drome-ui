@@ -1,6 +1,5 @@
 import type Drome from "./drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
-import { isNumber } from "../utils/validators";
 
 interface ReverbEffectOptions {
   mix?: number;
