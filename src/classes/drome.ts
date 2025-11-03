@@ -4,7 +4,7 @@ import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
 
-const BASE_GAIN = 0.75;
+const BASE_GAIN = 0.8;
 const NUM_CHANNELS = 8;
 
 class Drome {
@@ -12,6 +12,7 @@ class Drome {
   readonly instruments: (Synth | Sample)[] = [];
   readonly audioChannels: GainNode[];
   readonly bufferCache: Map<string, AudioBuffer> = new Map();
+  readonly reverbCache: Map<string, AudioBuffer> = new Map();
 
   constructor(bpm?: number) {
     this.clock = new AudioClock(bpm);

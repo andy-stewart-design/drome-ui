@@ -3,9 +3,9 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-const env = d.env(0, 1).adsr(0.05, 1, 0);
-const lfo = d.lfo(0.01, 1, 8).type("sine");
-d.synth("triangle").gain(env).gain(lfo);
+// const env = d.env(0, 1).adsr(0.05, 1, 0);
+// const lfo = d.lfo(0.01, 1, 8).type("sine");
+// d.synth("triangle").gain(env).gain(lfo);
 // d.synth("triangle").euclid(4, 4).gain([0.5, 0.9, 0.25, 1]);
 // d.synth("triangle").euclid(4, 4).lpf(800).rel(0.1);
 // d.synth("triangle").att(0.1).rel(0.25);
@@ -98,7 +98,7 @@ d.synth("triangle").gain(env).gain(lfo);
 // SAMPLES: BASIC
 // d.sample("hh").bank("tr909").euclid(4, 4);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
-// d.sample("bd:3").bank("tr909").euclid(4, 4);
+d.sample("bd:0").bank("tr909").euclid(4, 4).reverb();
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------
