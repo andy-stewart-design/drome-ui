@@ -29,25 +29,25 @@ async function renderFilter(
   lpfStart: number,
   lpfEnd: number
 ) {
-  const channelData = getAllChannelData(input);
-  const offline = new OfflineAudioContext(
+  const ctx = new OfflineAudioContext(
     2,
-    channelData[0].length,
+    getAllChannelData(input)[0].length,
     input.sampleRate
   );
-  const src = offline.createBufferSource();
-  src.buffer = input;
 
-  const filter = offline.createBiquadFilter();
-  filter.type = "lowpass";
-  filter.Q.value = 0.0001;
-  filter.frequency.setValueAtTime(lpfStart, 0);
+  const src = new AudioBufferSourceNode(ctx, { buffer: input });
+
+  const filter = new BiquadFilterNode(ctx, {
+    type: "lowpass",
+    frequency: lpfStart,
+    Q: 0.0001,
+  });
   filter.frequency.linearRampToValueAtTime(lpfEnd, duration);
 
-  src.connect(filter).connect(offline.destination);
+  src.connect(filter).connect(ctx.destination);
   src.start();
 
-  const rendered = await offline.startRendering();
+  const rendered = await ctx.startRendering();
 
   return rendered;
 }

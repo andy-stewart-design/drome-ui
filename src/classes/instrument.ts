@@ -407,8 +407,13 @@ abstract class Instrument<T> {
     return this;
   }
 
-  reverb(mix = 0.25, decay = 1) {
-    const reverb = new ReverbEffect(this._drome, { decay, mix });
+  reverb(mix = 0.2, decay = 1, lpfStart?: number, lpfEnd?: number) {
+    const reverb = new ReverbEffect(this._drome, {
+      mix,
+      decay,
+      lpfStart,
+      lpfEnd,
+    });
     this._effectsMap.set("reverb", reverb);
   }
 

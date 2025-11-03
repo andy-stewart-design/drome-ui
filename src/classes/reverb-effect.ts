@@ -22,7 +22,7 @@ class ReverbEffect {
     this.input = new GainNode(drome.ctx);
     this.convolver = new ConvolverNode(drome.ctx);
 
-    this.id = `${decay}`;
+    this.id = `${decay}-${lpfStart || 0}-${lpfEnd || 0}`;
     const buffer = drome.reverbCache.get(this.id);
     if (buffer) this.convolver.buffer = buffer;
     else this.createBuffer(drome, decay, lpfStart, lpfEnd);

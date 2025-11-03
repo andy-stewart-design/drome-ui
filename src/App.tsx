@@ -98,7 +98,7 @@ const note = 48;
 // SAMPLES: BASIC
 // d.sample("hh").bank("tr909").euclid(4, 4);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
-d.sample("bd:0").bank("tr909").euclid(4, 4).reverb();
+d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.1, 1, 1600, 1000);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------
