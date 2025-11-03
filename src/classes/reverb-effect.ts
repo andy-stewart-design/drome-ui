@@ -1,9 +1,12 @@
 import type Drome from "./drome";
-import { createImpulseResponse } from "../utils/reverb";
+import { createImpulseResponse, renderFilter } from "../utils/reverb";
+import { isNumber } from "../utils/validators";
 
 interface ReverbEffectOptions {
   mix?: number;
   decay?: number; // IR decay time in seconds
+  lpfStart?: number;
+  lpfEnd?: number; // dim
 }
 
 class ReverbEffect {
@@ -15,7 +18,7 @@ class ReverbEffect {
 
   constructor(
     drome: Drome,
-    { mix = 0.1, decay = 1 }: ReverbEffectOptions = {}
+    { mix = 0.1, decay = 1, lpfStart, lpfEnd }: ReverbEffectOptions = {}
   ) {
     this.input = new GainNode(drome.ctx);
     this.convolver = new ConvolverNode(drome.ctx);
@@ -23,7 +26,7 @@ class ReverbEffect {
     this.id = `${decay}`;
     const buffer = drome.reverbCache.get(this.id);
     if (buffer) this.convolver.buffer = buffer;
-    else this.createBuffer(drome, decay);
+    else this.createBuffer(drome, decay, lpfStart, lpfEnd);
 
     this.wet = new GainNode(drome.ctx, { gain: mix });
     this.dry = new GainNode(drome.ctx, { gain: 1 });
@@ -36,10 +39,22 @@ class ReverbEffect {
     this.convolver.connect(this.wet);
   }
 
-  private async createBuffer(drome: Drome, decay: number) {
+  private async createBuffer(
+    drome: Drome,
+    decay: number,
+    lpfStart = 0,
+    lpfEnd = 0
+  ) {
     const buffer = createImpulseResponse(drome.ctx, decay);
-    this.convolver.buffer = buffer;
-    drome.reverbCache.set(this.id, buffer);
+    if (lpfStart) {
+      renderFilter(buffer, decay, lpfStart, lpfEnd).then((out) => {
+        this.convolver.buffer = out;
+        drome.reverbCache.set(this.id, out);
+      });
+    } else {
+      this.convolver.buffer = buffer;
+      drome.reverbCache.set(this.id, buffer);
+    }
   }
 
   connect(dest: AudioNode) {

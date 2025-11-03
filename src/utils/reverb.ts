@@ -23,11 +23,11 @@ function createImpulseResponse(ctx: AudioContext, decay = 0.5) {
   return impulse;
 }
 
-async function applyLowpass(
+async function renderFilter(
   input: AudioBuffer,
+  duration: number,
   lpfStart: number,
-  lpfEnd: number,
-  duration: number
+  lpfEnd: number
 ) {
   const channelData = getAllChannelData(input);
   const offline = new OfflineAudioContext(
@@ -60,4 +60,4 @@ function getAllChannelData(buffer: AudioBuffer): Float32Array[] {
   return channels;
 }
 
-export { createImpulseResponse };
+export { createImpulseResponse, renderFilter };

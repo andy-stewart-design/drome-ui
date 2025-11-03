@@ -5,6 +5,10 @@ function isNullish(v: unknown) {
   return v === null || v === undefined;
 }
 
+function isNumber(v: unknown) {
+  return typeof v === "number";
+}
+
 function isLfoTuple(n: unknown[]): n is [LFO] {
   return n[0] instanceof LFO;
 }
@@ -13,4 +17,4 @@ function isEnvTuple(n: unknown[]): n is [Envelope] {
   return n[0] instanceof Envelope;
 }
 
-export { isNullish, isEnvTuple, isLfoTuple };
+export { isNullish, isNumber, isEnvTuple, isLfoTuple };
