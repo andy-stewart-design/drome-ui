@@ -407,14 +407,27 @@ abstract class Instrument<T> {
     return this;
   }
 
-  reverb(mix = 0.2, decay = 1, lpfStart = 1600, lpfEnd = 1000) {
-    const reverb = new ReverbEffect(this._drome, {
-      mix,
-      decay,
-      lpfStart,
-      lpfEnd,
-    });
+  reverb(a?: number, b?: number, c?: number, d?: number): this;
+  reverb(a?: number, b?: string): this;
+  reverb(
+    mix = 0.2,
+    decayOrSrc: string | number = 1,
+    lpfStart = 1600,
+    lpfEnd = 1000
+  ) {
+    let reverb: ReverbEffect;
+    if (typeof decayOrSrc === "string") {
+      reverb = new ReverbEffect(this._drome, { mix, src: decayOrSrc });
+    } else {
+      reverb = new ReverbEffect(this._drome, {
+        mix,
+        decay: decayOrSrc,
+        lpfStart,
+        lpfEnd,
+      });
+    }
     this._effectsMap.set("reverb", reverb);
+    return this;
   }
 
   beforePlay(barStart: number, barDuration: number) {
