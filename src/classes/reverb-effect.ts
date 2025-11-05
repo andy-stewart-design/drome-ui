@@ -2,8 +2,15 @@ import type Drome from "./drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
+import { bufferId } from "../utils/cache-id";
 
-const reverbSamples = ["echo", "muffler", "spring", "telephone"] as const;
+const reverbSamples = [
+  "echo",
+  "muffler",
+  "spring",
+  "telephone",
+  "rmx16",
+] as const;
 
 type ReverbSample = (typeof reverbSamples)[number];
 type ReverbSource = ReverbSample | (string & {}) | null;
@@ -74,39 +81,45 @@ class ReverbEffect {
   }
 
   private async loadSample(drome: Drome, src: NonNullable<ReverbSource>) {
-    if (isReverbSource(src)) {
-      const samplePath = getSamplePath("fx", src, 0);
+    const [sampleName, sampleIndex] = src.split(":");
 
-      if (!samplePath) {
-        console.warn(`Couldn't find a sample: ${src}`);
+    if (isReverbSource(sampleName)) {
+      const id = bufferId("fx", sampleName, sampleIndex);
+      const cachedBuffer = drome.bufferCache.get(id);
+
+      if (cachedBuffer) {
+        this.convolver.buffer = cachedBuffer;
         return;
       }
 
-      if (drome.bufferCache.has(samplePath)) {
-        const buffer = drome.bufferCache.get(samplePath)!;
-        this.convolver.buffer = buffer;
+      const samplePath = getSamplePath("fx", sampleName, sampleIndex);
+
+      if (!samplePath) {
+        console.warn(`Couldn't find a sample url for ${src}`);
         return;
       }
 
       const buffer = await loadSample(drome.ctx, samplePath);
 
       if (!buffer) {
-        console.warn(`Couldn't find a sample: ${src}`);
+        console.warn(`Couldn't load sample ${src} from ${samplePath}`);
         return;
       }
 
       this.convolver.buffer = buffer;
-      drome.bufferCache.set(samplePath, buffer);
+
+      if (!drome.bufferCache.has(id)) {
+        drome.bufferCache.set(id, buffer);
+      }
     } else if (src?.startsWith("https")) {
       const buffer = await loadSample(drome.ctx, src);
 
       if (!buffer) {
-        console.warn(`Couldn't find a sample: ${src}`);
+        console.warn(`Couldn't load sample from ${src}`);
         return;
       }
 
       this.convolver.buffer = buffer;
-      drome.bufferCache.set(src, buffer);
     }
   }
 

@@ -96,12 +96,9 @@ const note = 48;
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-// d.sample("hh").bank("tr909").euclid(4, 4);
+// d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.125]);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
-d.sample("bd:0")
-  .bank("tr909")
-  .euclid(4, 4)
-  .reverb(0.5, "https://cdn.freesound.org/previews/175/175304_1153184-lq.mp3");
+d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.2);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------
