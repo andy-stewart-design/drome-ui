@@ -11,7 +11,7 @@ class Drome {
   readonly clock: AudioClock;
   readonly instruments: (Synth | Sample)[] = [];
   readonly audioChannels: GainNode[];
-  readonly bufferCache: Map<string, AudioBuffer> = new Map();
+  readonly bufferCache: Map<string, AudioBuffer[]> = new Map();
   readonly reverbCache: Map<string, AudioBuffer> = new Map();
 
   constructor(bpm?: number) {

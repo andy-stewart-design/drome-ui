@@ -2,7 +2,7 @@ import type Drome from "./drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
-import { bufferId } from "../utils/cache-id";
+import { bufferId2 } from "../utils/cache-id";
 
 const reverbSamples = [
   "echo",
@@ -84,11 +84,11 @@ class ReverbEffect {
     const [sampleName, sampleIndex] = src.split(":");
 
     if (isReverbSource(sampleName)) {
-      const id = bufferId("fx", sampleName, sampleIndex);
-      const cachedBuffer = drome.bufferCache.get(id);
+      const [id, index] = bufferId2("fx", sampleName, sampleIndex);
+      const cachedBuffers = drome.bufferCache.get(id);
 
-      if (cachedBuffer) {
-        this.convolver.buffer = cachedBuffer;
+      if (cachedBuffers?.[index]) {
+        this.convolver.buffer = cachedBuffers[index];
         return;
       }
 
@@ -108,9 +108,14 @@ class ReverbEffect {
 
       this.convolver.buffer = buffer;
 
-      if (!drome.bufferCache.has(id)) {
-        drome.bufferCache.set(id, buffer);
+      if (cachedBuffers && !cachedBuffers[index]) {
+        cachedBuffers[index] = buffer;
+      } else if (!cachedBuffers) {
+        const buffers: AudioBuffer[] = [];
+        buffers[index] = buffer;
+        drome.bufferCache.set(id, buffers);
       }
+      console.log(drome.bufferCache);
     } else if (src?.startsWith("https")) {
       const buffer = await loadSample(drome.ctx, src);
 

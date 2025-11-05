@@ -2,7 +2,7 @@ import Instrument, { type InstrumentOptions } from "./instrument";
 import { flipBuffer } from "../utils/flip-buffer";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
-import { bufferId } from "../utils/cache-id";
+import { bufferId2 } from "../utils/cache-id";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
@@ -35,12 +35,15 @@ export default class Sample extends Instrument<number> {
 
   private async loadSample(sampleId: string) {
     const [sampleName, sampleIndex] = sampleId.split(":");
-    const id = bufferId(this._sampleBank, sampleName, sampleIndex);
-    const samplePath = getSamplePath(this._sampleBank, sampleName, sampleIndex);
-    const cachedBuffer = this._drome.bufferCache.get(id);
+    // const id = bufferId(this._sampleBank, sampleName, sampleIndex);
+    const [id, index] = bufferId2(this._sampleBank, sampleName, sampleIndex);
 
-    if (cachedBuffer) {
-      return { path: samplePath, buffer: cachedBuffer };
+    const samplePath = getSamplePath(this._sampleBank, sampleName, sampleIndex);
+    const cachedBuffers = this._drome.bufferCache.get(id);
+
+    if (cachedBuffers?.[index]) {
+      console.log(cachedBuffers?.[index]);
+      return { path: samplePath, buffer: cachedBuffers[index] };
     } else if (!samplePath) {
       console.warn(`Couldn't find a sample: ${this._sampleBank} ${sampleName}`);
       return { path: null, buffer: null };
@@ -51,8 +54,12 @@ export default class Sample extends Instrument<number> {
     if (!buffer) {
       console.warn(`Couldn't load sample ${sampleId} from ${samplePath}`);
       return { path: null, buffer: null };
-    } else if (!this._drome.bufferCache.has(id)) {
-      this._drome.bufferCache.set(id, buffer);
+    } else if (cachedBuffers && !cachedBuffers[index]) {
+      cachedBuffers[index] = buffer;
+    } else if (!cachedBuffers) {
+      const buffers: AudioBuffer[] = [];
+      buffers[index] = buffer;
+      this._drome.bufferCache.set(id, buffers);
     }
 
     return { path: samplePath, buffer };
