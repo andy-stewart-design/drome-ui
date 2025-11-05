@@ -2,7 +2,7 @@ import Instrument, { type InstrumentOptions } from "./instrument";
 import { flipBuffer } from "../utils/flip-buffer";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
-import { bufferId2 } from "../utils/cache-id";
+import { bufferId } from "../utils/cache-id";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
@@ -33,16 +33,30 @@ export default class Sample extends Instrument<number> {
     this._loop = opts.loop ?? false;
   }
 
+  private getSamplePath(name: string, index: number) {
+    if (this._sampleBank.toLocaleLowerCase() === "user") {
+      const bank = this._drome.userSamples.get(name);
+
+      if (!bank) {
+        console.warn(`Couldn't find user samples: ${name}`);
+        return;
+      }
+
+      return bank[index % bank.length];
+    } else {
+      getSamplePath(this._sampleBank, name, index);
+    }
+  }
+
   private async loadSample(sampleId: string) {
     const [sampleName, sampleIndex] = sampleId.split(":");
     // const id = bufferId(this._sampleBank, sampleName, sampleIndex);
-    const [id, index] = bufferId2(this._sampleBank, sampleName, sampleIndex);
+    const [id, index] = bufferId(this._sampleBank, sampleName, sampleIndex);
 
-    const samplePath = getSamplePath(this._sampleBank, sampleName, sampleIndex);
+    const samplePath = this.getSamplePath(sampleName, index);
     const cachedBuffers = this._drome.bufferCache.get(id);
 
     if (cachedBuffers?.[index]) {
-      console.log(cachedBuffers?.[index]);
       return { path: samplePath, buffer: cachedBuffers[index] };
     } else if (!samplePath) {
       console.warn(`Couldn't find a sample: ${this._sampleBank} ${sampleName}`);

@@ -13,6 +13,7 @@ class Drome {
   readonly audioChannels: GainNode[];
   readonly bufferCache: Map<string, AudioBuffer[]> = new Map();
   readonly reverbCache: Map<string, AudioBuffer> = new Map();
+  readonly userSamples: Map<string, string[]> = new Map();
 
   constructor(bpm?: number) {
     this.clock = new AudioClock(bpm);
@@ -83,6 +84,12 @@ class Drome {
     const depth = maxValue - value;
     const bpm = this.beatsPerMin;
     return new LFO(this.ctx, { value, depth, speed, bpm });
+  }
+
+  addSamples(map: Record<string, string | string[]>) {
+    Object.entries(map).forEach(([k, v]) => {
+      this.userSamples.set(k, Array.isArray(v) ? v : [v]);
+    });
   }
 
   get ctx() {

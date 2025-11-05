@@ -1,10 +1,4 @@
-function bufferId(bank: string, name: string, i?: string | number) {
-  const index = typeof i === "string" ? i.trim() : i;
-
-  return `${bank}-${name}-${index || 0}`;
-}
-
-function bufferId2(bank: string, name: string, i?: string | number | null) {
+function bufferId(bank: string, name: string, i?: string | number | null) {
   return [`${bank.trim()}-${name.trim()}`, safeToNumber(i)] as const;
 }
 
@@ -33,4 +27,4 @@ function safeToNumber(value: unknown) {
   return 0;
 }
 
-export { bufferId, bufferId2 };
+export { bufferId };

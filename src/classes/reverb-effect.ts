@@ -2,7 +2,7 @@ import type Drome from "./drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
-import { bufferId2 } from "../utils/cache-id";
+import { bufferId } from "../utils/cache-id";
 
 const reverbSamples = [
   "echo",
@@ -84,7 +84,7 @@ class ReverbEffect {
     const [sampleName, sampleIndex] = src.split(":");
 
     if (isReverbSource(sampleName)) {
-      const [id, index] = bufferId2("fx", sampleName, sampleIndex);
+      const [id, index] = bufferId("fx", sampleName, sampleIndex);
       const cachedBuffers = drome.bufferCache.get(id);
 
       if (cachedBuffers?.[index]) {
