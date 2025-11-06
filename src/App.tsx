@@ -3,13 +3,17 @@ import Drome from "./classes/drome";
 const d = new Drome(120);
 const note = 48;
 
-d.addSamples({
-  hey: [
-    "https://cdn.freesound.org/previews/88/88401_950462-lq.mp3",
-    "https://cdn.freesound.org/previews/348/348568_5614036-lq.mp3",
-    "https://cdn.freesound.org/previews/416/416507_1549074-lq.mp3",
-  ],
-});
+d.addSamples(
+  {
+    hey: [
+      "https://cdn.freesound.org/previews/88/88401_950462-lq.mp3",
+      "https://cdn.freesound.org/previews/348/348568_5614036-lq.mp3",
+      "https://cdn.freesound.org/previews/416/416507_1549074-lq.mp3",
+    ],
+    bd: "https://cdn.freesound.org/previews/33/33573_294523-lq.mp3",
+  },
+  "tr808"
+);
 
 // const env = d.env(0, 1).adsr(0.05, 1, 0);
 // const lfo = d.lfo(0.01, 1, 8).type("sine");
@@ -107,7 +111,9 @@ d.addSamples({
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.125]);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
 // d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.2, "echo");
-d.sample("hey:4").bank("user").euclid(4, 4);
+d.sample("hey:2").bank("tr808").euclid(1, 4, 2);
+d.sample("bd").bank("tr808").euclid(4, 4);
+d.sample("hh").bank("tr808").euclid(4, 8, 1);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------

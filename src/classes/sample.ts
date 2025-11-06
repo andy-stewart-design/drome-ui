@@ -34,23 +34,14 @@ export default class Sample extends Instrument<number> {
   }
 
   private getSamplePath(name: string, index: number) {
-    if (this._sampleBank.toLocaleLowerCase() === "user") {
-      const bank = this._drome.userSamples.get(name);
+    const paths = this._drome.userSamples.get(this._sampleBank)?.get(name);
 
-      if (!bank) {
-        console.warn(`Couldn't find user samples: ${name}`);
-        return;
-      }
-
-      return bank[index % bank.length];
-    } else {
-      getSamplePath(this._sampleBank, name, index);
-    }
+    if (paths) return paths[index % paths.length];
+    else return getSamplePath(this._sampleBank, name, index);
   }
 
   private async loadSample(sampleId: string) {
     const [sampleName, sampleIndex] = sampleId.split(":");
-    // const id = bufferId(this._sampleBank, sampleName, sampleIndex);
     const [id, index] = bufferId(this._sampleBank, sampleName, sampleIndex);
 
     const samplePath = this.getSamplePath(sampleName, index);
@@ -84,7 +75,7 @@ export default class Sample extends Instrument<number> {
   }
 
   bank(bank: string) {
-    this._sampleBank = bank;
+    this._sampleBank = bank.toLocaleLowerCase();
     return this;
   }
 
