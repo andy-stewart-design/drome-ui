@@ -408,23 +408,16 @@ abstract class Instrument<T> {
   }
 
   reverb(a?: number, b?: number, c?: number, d?: number): this;
-  reverb(a?: number, b?: string): this;
-  reverb(
-    mix = 0.2,
-    decayOrSrc: string | number = 1,
-    lpfStart = 1600,
-    lpfEnd = 1000
-  ) {
+  reverb(a?: number, b?: string, c?: string): this;
+  reverb(mix = 0.2, b: unknown = "echo", c: unknown = "fx", d?: number) {
     let reverb: ReverbEffect;
-    if (typeof decayOrSrc === "string") {
-      reverb = new ReverbEffect(this._drome, { mix, src: decayOrSrc });
+    if (typeof b === "string" && typeof c === "string") {
+      reverb = new ReverbEffect(this._drome, { mix, src: b });
     } else {
-      reverb = new ReverbEffect(this._drome, {
-        mix,
-        decay: decayOrSrc,
-        lpfStart,
-        lpfEnd,
-      });
+      const decay = typeof b === "number" ? b : 1;
+      const lpfStart = typeof c === "number" ? c : 1600;
+      const lpfEnd = d || 1000;
+      reverb = new ReverbEffect(this._drome, { mix, decay, lpfStart, lpfEnd });
     }
     this._effectsMap.set("reverb", reverb);
     return this;

@@ -1,3 +1,5 @@
+// TODO: finish logic for loading reverb samples
+
 import type Drome from "./drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { getSamplePath } from "../utils/get-sample-path";
@@ -80,21 +82,31 @@ class ReverbEffect {
     }
   }
 
-  private async loadSample(drome: Drome, src: NonNullable<ReverbSource>) {
+  private async loadSample(
+    drome: Drome,
+    src: NonNullable<ReverbSource>,
+    bank = "fx"
+  ) {
     const [sampleName, sampleIndex] = src.split(":");
 
-    if (isReverbSource(sampleName)) {
-      const [id, index] = bufferId("fx", sampleName, sampleIndex);
+    if (src?.startsWith("https")) {
+      const buffer = await loadSample(drome.ctx, src);
+
+      if (!buffer) {
+        console.warn(`Couldn't load sample from ${src}`);
+        return;
+      }
+
+      this.convolver.buffer = buffer;
+    } else {
+      const samplePath = getSamplePath(bank, sampleName, sampleIndex);
+      const [id, index] = bufferId(bank, sampleName, sampleIndex);
       const cachedBuffers = drome.bufferCache.get(id);
 
       if (cachedBuffers?.[index]) {
         this.convolver.buffer = cachedBuffers[index];
         return;
-      }
-
-      const samplePath = getSamplePath("fx", sampleName, sampleIndex);
-
-      if (!samplePath) {
+      } else if (!samplePath) {
         console.warn(`Couldn't find a sample url for ${src}`);
         return;
       }
@@ -115,16 +127,6 @@ class ReverbEffect {
         buffers[index] = buffer;
         drome.bufferCache.set(id, buffers);
       }
-      console.log(drome.bufferCache);
-    } else if (src?.startsWith("https")) {
-      const buffer = await loadSample(drome.ctx, src);
-
-      if (!buffer) {
-        console.warn(`Couldn't load sample from ${src}`);
-        return;
-      }
-
-      this.convolver.buffer = buffer;
     }
   }
 
@@ -140,7 +142,6 @@ class ReverbEffect {
 
   setWetLevel(v: number) {
     this.wet.gain.value = v;
-    this.dry.gain.value = 1 - v;
   }
 
   get buffer() {

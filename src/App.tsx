@@ -110,10 +110,10 @@ d.addSamples(
 // SAMPLES: BASIC
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.125]);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
-// d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.2, "echo");
-d.sample("hey:2").bank("tr808").euclid(1, 4, 2);
-d.sample("bd").bank("tr808").euclid(4, 4);
-d.sample("hh").bank("tr808").euclid(4, 8, 1);
+d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.2, "echo:2", "tr808");
+// d.sample("hey:2").bank("tr808").euclid(1, 4, 2);
+// d.sample("bd").bank("tr808").euclid(4, 4);
+// d.sample("hh").bank("tr808").euclid(4, 8, 1);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 
 // --------------------------------------------------

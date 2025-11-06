@@ -6,9 +6,6 @@ import { bufferId } from "../utils/cache-id";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
-// type Note<T> = Nullable<T>;
-// type Chord<T> = Note<T>[];
-// type Cycle<T> = Nullable<Chord<T>>[];
 
 interface SampleOptions extends InstrumentOptions<number> {
   sampleIds?: string[];
@@ -175,7 +172,6 @@ export default class Sample extends Instrument<number> {
         };
 
         src.addEventListener("ended", cleanup);
-        // });
       });
     });
   }
