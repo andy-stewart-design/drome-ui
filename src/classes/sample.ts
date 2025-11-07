@@ -1,8 +1,5 @@
 import Instrument, { type InstrumentOptions } from "./instrument";
 import { flipBuffer } from "../utils/flip-buffer";
-import { getSamplePath } from "../utils/get-sample-path";
-import { loadSample } from "../utils/load-sample";
-import { bufferId } from "../utils/cache-id";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
@@ -30,45 +27,11 @@ export default class Sample extends Instrument<number> {
     this._loop = opts.loop ?? false;
   }
 
-  private getSamplePath(name: string, index: number) {
-    const paths = this._drome.userSamples.get(this._sampleBank)?.get(name);
-
-    if (paths) return paths[index % paths.length];
-    else return getSamplePath(this._sampleBank, name, index);
-  }
-
-  private async loadSample(sampleId: string) {
-    const [sampleName, sampleIndex] = sampleId.split(":");
-    const [id, index] = bufferId(this._sampleBank, sampleName, sampleIndex);
-
-    const samplePath = this.getSamplePath(sampleName, index);
-    const cachedBuffers = this._drome.bufferCache.get(id);
-
-    if (cachedBuffers?.[index]) {
-      return { path: samplePath, buffer: cachedBuffers[index] };
-    } else if (!samplePath) {
-      console.warn(`Couldn't find a sample: ${this._sampleBank} ${sampleName}`);
-      return { path: null, buffer: null };
-    }
-
-    const buffer = await loadSample(this.ctx, samplePath);
-
-    if (!buffer) {
-      console.warn(`Couldn't load sample ${sampleId} from ${samplePath}`);
-      return { path: null, buffer: null };
-    } else if (cachedBuffers && !cachedBuffers[index]) {
-      cachedBuffers[index] = buffer;
-    } else if (!cachedBuffers) {
-      const buffers: AudioBuffer[] = [];
-      buffers[index] = buffer;
-      this._drome.bufferCache.set(id, buffers);
-    }
-
-    return { path: samplePath, buffer };
-  }
-
   preloadSamples() {
-    return this._sampleIds.map(async (id) => this.loadSample(id));
+    return this._sampleIds.map(async (id) => {
+      const [name, index] = id.split(":");
+      return this._drome.loadSample(this._sampleBank, name, index);
+    });
   }
 
   bank(bank: string) {
@@ -133,9 +96,9 @@ export default class Sample extends Instrument<number> {
 
     this._sampleIds.forEach((sampleId) => {
       notes.forEach(async (note, noteIndex) => {
-        // chopGroup?.forEach(async (chopPoint) => {
-        // chopPoint is a number between 0 and 1
-        const { buffer } = await this.loadSample(sampleId);
+        const bank = this._sampleBank;
+        const [name, index] = sampleId.split(":");
+        const { buffer } = await this._drome.loadSample(bank, name, index);
         if (!buffer || typeof note?.value !== "number") return;
 
         const playbackRate = this._fitValue

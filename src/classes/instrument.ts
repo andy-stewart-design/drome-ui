@@ -407,18 +407,27 @@ abstract class Instrument<T> {
     return this;
   }
 
+  // b either represents decay/room size or a url/sample name
+  // c either represents the lpf start value or a sample bank name
+  // d is the lpf end value
   reverb(a?: number, b?: number, c?: number, d?: number): this;
   reverb(a?: number, b?: string, c?: string): this;
-  reverb(mix = 0.2, b: unknown = "echo", c: unknown = "fx", d?: number) {
+  reverb(mix = 0.2, b: unknown = 1, c: unknown = 1600, d?: number) {
     let reverb: ReverbEffect;
-    if (typeof b === "string" && typeof c === "string") {
-      reverb = new ReverbEffect(this._drome, { mix, src: b });
-    } else {
-      const decay = typeof b === "number" ? b : 1;
-      const lpfStart = typeof c === "number" ? c : 1600;
+
+    if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
-      reverb = new ReverbEffect(this._drome, { mix, decay, lpfStart, lpfEnd });
+      const opts = { mix, decay: b, lpfStart: c, lpfEnd };
+      reverb = new ReverbEffect(this._drome, opts);
+    } else {
+      const name = typeof b === "string" ? b : "echo";
+      const bank = typeof c === "string" ? c : "fx";
+      const src = name.startsWith("https")
+        ? ({ registered: false, url: name } as const)
+        : ({ registered: true, name, bank } as const);
+      reverb = new ReverbEffect(this._drome, { mix, src });
     }
+
     this._effectsMap.set("reverb", reverb);
     return this;
   }
