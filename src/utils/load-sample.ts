@@ -1,4 +1,9 @@
-async function loadSample(ctx: AudioContext, url: string) {
+async function loadSample(ctx: AudioContext, url: string | undefined | null) {
+  if (!url) {
+    console.error(`Couldn't load sample. Ivalid url "${url}".`);
+    return null;
+  }
+
   try {
     const response = await fetch(url);
     if (!response.ok) {

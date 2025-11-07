@@ -3,15 +3,20 @@ import Envelope from "./envelope";
 import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
+import { getSamplePath } from "../utils/get-sample-path";
+import { loadSample } from "../utils/load-sample";
+import { bufferId } from "../utils/cache-id";
 
-const BASE_GAIN = 0.75;
+const BASE_GAIN = 0.8;
 const NUM_CHANNELS = 8;
 
 class Drome {
   readonly clock: AudioClock;
   readonly instruments: (Synth | Sample)[] = [];
   readonly audioChannels: GainNode[];
-  readonly bufferCache: Map<string, AudioBuffer> = new Map();
+  readonly bufferCache: Map<string, AudioBuffer[]> = new Map();
+  readonly reverbCache: Map<string, AudioBuffer> = new Map();
+  readonly userSamples: Map<string, Map<string, string[]>> = new Map();
 
   constructor(bpm?: number) {
     this.clock = new AudioClock(bpm);
@@ -37,13 +42,56 @@ class Drome {
     await Promise.all(samplePromises);
   }
 
-  public async start() {
+  private getSamplePath(bank: string, name: string, index: number) {
+    const paths = this.userSamples.get(bank)?.get(name);
+    if (paths) return paths[index % paths.length];
+    else return getSamplePath(bank, name, index);
+  }
+
+  addSamples(record: Record<string, string | string[]>, bank = "user") {
+    const samples = Object.entries(record).map(([k, v]) => {
+      return [k, Array.isArray(v) ? v : [v]] as const;
+    });
+
+    this.userSamples.set(bank, new Map(samples));
+  }
+
+  async loadSample(bank: string, name: string, i: string | number | undefined) {
+    const [id, index] = bufferId(bank, name, i);
+
+    const samplePath = this.getSamplePath(bank, name, index);
+    const cachedBuffers = this.bufferCache.get(id);
+
+    if (cachedBuffers?.[index]) {
+      return { path: samplePath, buffer: cachedBuffers[index] };
+    } else if (!samplePath) {
+      console.warn(`Couldn't find a sample: ${bank} ${name}`);
+      return { path: null, buffer: null };
+    }
+
+    const buffer = await loadSample(this.ctx, samplePath);
+
+    if (!buffer) {
+      console.warn(`Couldn't load sample ${name} from ${samplePath}`);
+      return { path: null, buffer: null };
+    } else if (cachedBuffers && !cachedBuffers[index]) {
+      cachedBuffers[index] = buffer;
+    } else if (!cachedBuffers) {
+      const buffers: AudioBuffer[] = [];
+      buffers[index] = buffer;
+      this.bufferCache.set(id, buffers);
+    }
+
+    return { path: samplePath, buffer };
+  }
+
+  async start() {
     if (!this.clock.paused) return;
     await this.preloadSamples();
     this.clock.start();
   }
 
-  public stop() {
+  stop() {
     this.clock.stop();
     this.instruments.forEach((inst) => inst.stop());
     // this.clearReplListeners();

@@ -1,0 +1,15 @@
+{
+  "basePath": "https://raw.githubusercontent.com/andy-stewart-design/samples-fx/main/",
+  "slugs": {
+    "echo": [
+      "reverb/echo-2.wav",
+      "reverb/echo-thief-1.wav",
+      "reverb/echo-thief-2.wav",
+      "reverb/echo.wav"
+    ],
+    "muffler": ["reverb/muffler.wav"],
+    "spring": ["reverb/spring.wav", "reverb/spring-2.wav"],
+    "telephone": ["reverb/telephone.wav"],
+    "rmx16": ["reverb/rmx16-1.wav", "reverb/rmx16-2.wav"]
+  }
+}

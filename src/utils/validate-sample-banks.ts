@@ -2,7 +2,7 @@
 const sampleBankNames = [
   "9000","ace","cr78","d70","dmx","dr550", "hr16",
   "ms404","rm50","tr505","tr606", "tr626","tr707",
-  "tr808","tr909","loops", "sonicpi"
+  "tr808","tr909","loops", "sonicpi", "fx"
 ] as const;
 
 interface SampleBankData {

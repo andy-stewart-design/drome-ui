@@ -1,13 +1,8 @@
 import Instrument, { type InstrumentOptions } from "./instrument";
 import { flipBuffer } from "../utils/flip-buffer";
-import { getSamplePath } from "../utils/get-sample-path";
-import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
 
 type Nullable<T> = T | null | undefined;
-// type Note<T> = Nullable<T>;
-// type Chord<T> = Note<T>[];
-// type Cycle<T> = Nullable<Chord<T>>[];
 
 interface SampleOptions extends InstrumentOptions<number> {
   sampleIds?: string[];
@@ -32,31 +27,15 @@ export default class Sample extends Instrument<number> {
     this._loop = opts.loop ?? false;
   }
 
-  private async loadSample(sampleId: string) {
-    const [sampleName, sampleIndex] = sampleId.split(":");
-    const samplePath = getSamplePath(this._sampleBank, sampleName, sampleIndex);
-
-    if (!samplePath) {
-      console.warn(`Couldn't find a sample: ${this._sampleBank} ${sampleName}`);
-      return { path: null, buffer: null };
-    }
-
-    if (this._drome.bufferCache.has(samplePath)) {
-      const buffer = this._drome.bufferCache.get(samplePath)!;
-      return { path: samplePath, buffer };
-    }
-
-    const buffer = await loadSample(this.ctx, samplePath);
-    if (buffer) this._drome.bufferCache.set(samplePath, buffer);
-    return { path: samplePath, buffer };
-  }
-
   preloadSamples() {
-    return this._sampleIds.map(async (id) => this.loadSample(id));
+    return this._sampleIds.map(async (id) => {
+      const [name, index] = id.split(":");
+      return this._drome.loadSample(this._sampleBank, name, index);
+    });
   }
 
   bank(bank: string) {
-    this._sampleBank = bank;
+    this._sampleBank = bank.toLocaleLowerCase();
     return this;
   }
 
@@ -117,9 +96,9 @@ export default class Sample extends Instrument<number> {
 
     this._sampleIds.forEach((sampleId) => {
       notes.forEach(async (note, noteIndex) => {
-        // chopGroup?.forEach(async (chopPoint) => {
-        // chopPoint is a number between 0 and 1
-        const { buffer } = await this.loadSample(sampleId);
+        const bank = this._sampleBank;
+        const [name, index] = sampleId.split(":");
+        const { buffer } = await this._drome.loadSample(bank, name, index);
         if (!buffer || typeof note?.value !== "number") return;
 
         const playbackRate = this._fitValue
@@ -156,7 +135,6 @@ export default class Sample extends Instrument<number> {
         };
 
         src.addEventListener("ended", cleanup);
-        // });
       });
     });
   }

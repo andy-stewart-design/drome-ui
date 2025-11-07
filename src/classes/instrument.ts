@@ -2,6 +2,7 @@ import DromeCycle from "./drome-cycle";
 import DromeArray from "./drome-array";
 import LFO from "./lfo";
 import Envelope from "./envelope";
+import ReverbEffect from "./reverb-effect";
 import { isNullish, isEnvTuple, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
@@ -15,6 +16,9 @@ import type {
   Note,
   Nullable,
 } from "../types";
+// import { createImpulseResponse } from "../utils/reverb";
+
+type Effect = "reverb" | "distortion";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -39,6 +43,7 @@ abstract class Instrument<T> {
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
+  protected _effectsMap: Map<Effect, AudioNode | ReverbEffect>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -59,10 +64,11 @@ abstract class Instrument<T> {
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._filterMap = new Map();
+    this._effectsMap = new Map();
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
     this._envMap = new Map([
-      ["gain", new Envelope(0, opts.baseGain || 0.75).adsr(a, d, s, r)],
+      ["gain", new Envelope(0, opts.baseGain || 1).adsr(a, d, s, r)],
     ]);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
@@ -218,14 +224,20 @@ abstract class Instrument<T> {
 
   private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
     if (!this._isConnected) {
-      const chain = [...nodes.flat(), this._postgainNode, this._destination];
+      const chain = [
+        ...nodes.flat(),
+        this._postgainNode,
+        ...this._effectsMap.values(),
+        this._destination,
+      ];
 
       chain.forEach((node, i) => {
         const nextNode = chain[i + 1];
-        if (nextNode) node.connect(nextNode);
+        if (nextNode instanceof ReverbEffect) node.connect(nextNode.input);
+        else if (nextNode) node.connect(nextNode);
       });
 
-      this._connectorNode = chain[0];
+      this._connectorNode = chain[0] as AudioNode;
       this._isConnected = true;
     }
 
@@ -392,6 +404,31 @@ abstract class Instrument<T> {
     } else {
       this._pan.note(...v);
     }
+    return this;
+  }
+
+  // b either represents decay/room size or a url/sample name
+  // c either represents the lpf start value or a sample bank name
+  // d is the lpf end value
+  reverb(a?: number, b?: number, c?: number, d?: number): this;
+  reverb(a?: number, b?: string, c?: string): this;
+  reverb(mix = 0.2, b: unknown = 1, c: unknown = 1600, d?: number) {
+    let reverb: ReverbEffect;
+
+    if (typeof b === "number" && typeof c === "number") {
+      const lpfEnd = d || 1000;
+      const opts = { mix, decay: b, lpfStart: c, lpfEnd };
+      reverb = new ReverbEffect(this._drome, opts);
+    } else {
+      const name = typeof b === "string" ? b : "echo";
+      const bank = typeof c === "string" ? c : "fx";
+      const src = name.startsWith("https")
+        ? ({ registered: false, url: name } as const)
+        : ({ registered: true, name, bank } as const);
+      reverb = new ReverbEffect(this._drome, { mix, src });
+    }
+
+    this._effectsMap.set("reverb", reverb);
     return this;
   }
 
