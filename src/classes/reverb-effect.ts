@@ -1,6 +1,6 @@
 // TODO: finish logic for loading reverb samples
 
-import DromeEffect from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
@@ -18,8 +18,7 @@ interface RemoteSampleSource {
 
 type SampleSource = RemoteSampleSource | LocalSampleSource;
 
-interface ReverbOptions {
-  mix?: number;
+interface ReverbOptions extends DromeEffectOptions {
   src?: SampleSource;
   decay?: number; // IR decay time in seconds
   lpfStart?: number;

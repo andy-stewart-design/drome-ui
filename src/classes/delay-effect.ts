@@ -1,10 +1,9 @@
-import DromeEffect from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
 import type Drome from "./drome";
 
-interface DelayEffectOptions {
+interface DelayEffectOptions extends DromeEffectOptions {
   delayTime?: number;
   feedback?: number;
-  mix?: number;
 }
 
 class DelayEffect extends DromeEffect {

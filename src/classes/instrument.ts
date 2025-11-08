@@ -18,6 +18,7 @@ import type {
   Note,
   Nullable,
 } from "../types";
+import DistortionEffect from "./distortion-effect";
 
 type EffectName = "reverb" | "distortion" | "delay";
 
@@ -227,8 +228,8 @@ abstract class Instrument<T> {
     if (!this._isConnected) {
       const chain = [
         ...nodes.flat(),
-        this._postgainNode,
         ...this._effectsMap.values(),
+        this._postgainNode,
         this._destination,
       ];
 
@@ -436,6 +437,12 @@ abstract class Instrument<T> {
   delay(delayTime = 0.25, feedback = 0.1, mix = 0.2) {
     const delay = new DelayEffect(this._drome, { delayTime, feedback, mix });
     this._effectsMap.set("delay", delay);
+    return this;
+  }
+
+  distort(amount = 50, mix = 0.5) {
+    const dist = new DistortionEffect(this._drome, { amount, mix });
+    this._effectsMap.set("distortion", dist);
     return this;
   }
 

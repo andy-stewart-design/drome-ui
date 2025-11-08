@@ -2,6 +2,7 @@ import type Drome from "./drome";
 
 interface DromeEffectOptions {
   mix?: number;
+  variableDry?: boolean;
 }
 
 abstract class DromeEffect {
@@ -9,10 +10,14 @@ abstract class DromeEffect {
   protected _wet: GainNode;
   protected _dry: GainNode;
 
-  constructor(drome: Drome, { mix = 0.1 }: DromeEffectOptions = {}) {
+  constructor(
+    drome: Drome,
+    { mix = 0.1, variableDry = false }: DromeEffectOptions = {}
+  ) {
+    const dryGain = variableDry ? 1 - mix : 1;
     this.input = new GainNode(drome.ctx);
     this._wet = new GainNode(drome.ctx, { gain: mix });
-    this._dry = new GainNode(drome.ctx, { gain: 1 });
+    this._dry = new GainNode(drome.ctx, { gain: dryGain });
   }
 
   connect(dest: AudioNode) {
@@ -35,3 +40,4 @@ abstract class DromeEffect {
 }
 
 export default DromeEffect;
+export type { DromeEffectOptions };
