@@ -1,3 +1,4 @@
+import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./delay-effect";
 import DromeArray from "./drome-array";
 import DromeCycle from "./drome-cycle";
@@ -20,7 +21,7 @@ import type {
 } from "../types";
 import DistortionEffect from "./distortion-effect";
 
-type EffectName = "reverb" | "distortion" | "delay";
+type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -443,6 +444,12 @@ abstract class Instrument<T> {
   distort(amount = 50, mix = 0.5) {
     const dist = new DistortionEffect(this._drome, { amount, mix });
     this._effectsMap.set("distortion", dist);
+    return this;
+  }
+
+  crush(bitDepth = 16, mix = 1) {
+    const effect = new BitcrusherEffect(this._drome, { bitDepth, mix });
+    this._effectsMap.set("bitcrush", effect);
     return this;
   }
 

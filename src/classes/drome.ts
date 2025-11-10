@@ -49,6 +49,10 @@ class Drome {
     else return getSamplePath(bank, name, index);
   }
 
+  async init() {
+    await this.ctx.audioWorklet.addModule(bitcrusherUrl);
+  }
+
   addSamples(record: Record<string, string | string[]>, bank = "user") {
     const samples = Object.entries(record).map(([k, v]) => {
       return [k, Array.isArray(v) ? v : [v]] as const;
@@ -88,9 +92,8 @@ class Drome {
 
   async start() {
     if (!this.clock.paused) return;
-    await this.ctx.audioWorklet.addModule(bitcrusherUrl);
-    console.log(new AudioWorkletNode(this.ctx, "bitcrush-processor"));
-
+    // await this.ctx.audioWorklet.addModule(bitcrusherUrl);
+    // console.log(new AudioWorkletNode(this.ctx, "bitcrush-processor"));
     await this.preloadSamples();
     this.clock.start();
   }
