@@ -1,7 +1,9 @@
-import DromeCycle from "./drome-cycle";
+import DelayEffect from "./delay-effect";
 import DromeArray from "./drome-array";
-import LFO from "./lfo";
+import DromeCycle from "./drome-cycle";
+import DromeEffect from "./drome-effect";
 import Envelope from "./envelope";
+import LFO from "./lfo";
 import ReverbEffect from "./reverb-effect";
 import { isNullish, isEnvTuple, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
@@ -16,9 +18,9 @@ import type {
   Note,
   Nullable,
 } from "../types";
-// import { createImpulseResponse } from "../utils/reverb";
+import DistortionEffect from "./distortion-effect";
 
-type Effect = "reverb" | "distortion";
+type EffectName = "reverb" | "distortion" | "delay";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -43,7 +45,7 @@ abstract class Instrument<T> {
   protected _filterMap: Map<FilterType, FilterOptions>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
-  protected _effectsMap: Map<Effect, AudioNode | ReverbEffect>;
+  protected _effectsMap: Map<EffectName, DromeEffect>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -226,14 +228,14 @@ abstract class Instrument<T> {
     if (!this._isConnected) {
       const chain = [
         ...nodes.flat(),
-        this._postgainNode,
         ...this._effectsMap.values(),
+        this._postgainNode,
         this._destination,
       ];
 
       chain.forEach((node, i) => {
         const nextNode = chain[i + 1];
-        if (nextNode instanceof ReverbEffect) node.connect(nextNode.input);
+        if (nextNode instanceof DromeEffect) node.connect(nextNode.input);
         else if (nextNode) node.connect(nextNode);
       });
 
@@ -432,6 +434,18 @@ abstract class Instrument<T> {
     return this;
   }
 
+  delay(delayTime = 0.25, feedback = 0.1, mix = 0.2) {
+    const delay = new DelayEffect(this._drome, { delayTime, feedback, mix });
+    this._effectsMap.set("delay", delay);
+    return this;
+  }
+
+  distort(amount = 50, mix = 0.5) {
+    const dist = new DistortionEffect(this._drome, { amount, mix });
+    this._effectsMap.set("distortion", dist);
+    return this;
+  }
+
   beforePlay(barStart: number, barDuration: number) {
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
@@ -458,7 +472,7 @@ abstract class Instrument<T> {
   stop(when?: number) {
     const startTime = this._startTime ?? this.ctx.currentTime;
     const stopTime = when ?? this.ctx.currentTime;
-    const relTime = 0.15;
+    const relTime = 0.25;
 
     if (startTime > this.ctx.currentTime) {
       this._audioNodes.forEach((node) => node.stop());
