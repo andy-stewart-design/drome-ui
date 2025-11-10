@@ -472,7 +472,7 @@ abstract class Instrument<T> {
   stop(when?: number) {
     const startTime = this._startTime ?? this.ctx.currentTime;
     const stopTime = when ?? this.ctx.currentTime;
-    const relTime = 0.15;
+    const relTime = 0.25;
 
     if (startTime > this.ctx.currentTime) {
       this._audioNodes.forEach((node) => node.stop());

@@ -115,9 +115,13 @@ d.synth("triangle").gain(env).gain(lfo);
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.25]);
+// d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.25]);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
-d.sample("bd:0").bank("tr909").euclid(4, 4).delay(0.125, 0.5, 0.25).reverb(0.5);
+d.sample("bd:0")
+  .bank("tr909")
+  .euclid(4, 4)
+  .delay(0.125, 0.25, 0.25)
+  .reverb(0.75);
 // d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.8, "hey:1", "tr808");
 // d.sample("hey:2").bank("tr808").euclid(1, 4, 2);
 // d.sample("bd").bank("tr808").euclid(4, 4);
