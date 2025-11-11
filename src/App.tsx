@@ -117,7 +117,8 @@ d.addSamples(
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-// d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875).gain([0.5, 0.25]);
+// d.sample("hh:1").bank("tr909").euclid(8, 8).pan(0.875).gain([0.5, 0.25]);
+// d.sample("oh:1").bank("tr909").euclid(4, 8, 1).pan(-0.875).gain(0.75);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
 // d.sample("bd:0")
 //   .bank("tr909")
@@ -125,9 +126,13 @@ d.addSamples(
 //   .delay(0.125, 0.25, 0.25)
 //   .reverb(0.75);
 // d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.8, "hey:1", "tr808");
-d.synth("triangle").euclid(2, 4).env(0.01, 0, 1, 0.5).crush(4);
-// d.sample("hey:2").bank("vox").euclid(2, 4).crush(4, 1);
-// d.sample("bd").bank("tr808").euclid(4, 4);
+// d.synth("triangle")
+//   .note([note, note + 4])
+//   .euclid(3, 8)
+//   .env(0.01, 0, 1, 0.5)
+//   .crush(4);
+d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
+// d.sample("bd:3").euclid(4, 4);
 // d.sample("hh").bank("tr808").euclid(4, 8, 1);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
 

@@ -447,8 +447,12 @@ abstract class Instrument<T> {
     return this;
   }
 
-  crush(bitDepth = 16, mix = 1) {
-    const effect = new BitcrusherEffect(this._drome, { bitDepth, mix });
+  crush(bitDepth: number, rateReduction = 1, mix = 1) {
+    const effect = new BitcrusherEffect(this._drome, {
+      bitDepth,
+      rateReduction,
+      mix,
+    });
     this._effectsMap.set("bitcrush", effect);
     return this;
   }
@@ -467,7 +471,9 @@ abstract class Instrument<T> {
       };
     });
 
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
+    // stop current lfos to make sure that lfo period stays synced with bpm
+    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
     const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
     const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);

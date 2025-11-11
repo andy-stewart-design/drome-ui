@@ -3,7 +3,7 @@ import type Drome from "./drome";
 
 interface BitcrusherEffectOptions extends DromeEffectOptions {
   bitDepth?: number;
-  normfreq?: number;
+  rateReduction?: number;
 }
 
 class BitcrusherEffect extends DromeEffect {
@@ -11,13 +11,13 @@ class BitcrusherEffect extends DromeEffect {
 
   constructor(
     drome: Drome,
-    { bitDepth = 16, normfreq = 0.1, mix = 1 }: BitcrusherEffectOptions = {}
+    { bitDepth = 16, rateReduction = 1, mix = 1 }: BitcrusherEffectOptions = {}
   ) {
     super(drome, { mix, variableDry: true });
 
     this.bcNode = new AudioWorkletNode(drome.ctx, "bitcrush-processor");
     this.bitDepth(bitDepth);
-    this.normfreq(normfreq);
+    this.rateReduction(rateReduction);
 
     // Dry path
     this.input.connect(this._dry);
@@ -30,26 +30,23 @@ class BitcrusherEffect extends DromeEffect {
     this.bitParam.value = v;
   }
 
-  normfreq(v: number) {
-    this.freqParam.value = v;
+  rateReduction(v: number) {
+    this.rateParam.value = v;
   }
 
   get bitParam() {
-    const param = this.bcNode.parameters.get("bits");
-    if (!param) throw new Error("[BitcrusherEffect] couldn't get 'bits' param");
-    return param;
-  }
-
-  get freqParam() {
-    const param = this.bcNode.parameters.get("normfreq");
+    const param = this.bcNode.parameters.get("bitDepth");
     if (!param)
-      throw new Error("[BitcrusherEffect] couldn't get 'normfreq' param");
+      throw new Error("[BitcrusherEffect] couldn't get 'bitDepth' param");
     return param;
   }
 
-  //   setAmount(amount: number) {
-  //     this.waveShaper.curve = this.makeDistortionCurve(amount);
-  //   }
+  get rateParam() {
+    const param = this.bcNode.parameters.get("rateReduction");
+    if (!param)
+      throw new Error("[BitcrusherEffect] couldn't get 'rateReduction' param");
+    return param;
+  }
 }
 
 export default BitcrusherEffect;
