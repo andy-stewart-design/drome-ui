@@ -43,7 +43,7 @@ class AudioClock {
     if (!this._paused) return;
     if (this.ctx.state === "suspended") {
       console.log("audio context is suspended", this.ctx.state);
-      this.ctx.resume();
+      await this.ctx.resume();
     }
     this.metronome.bar = -1;
     this.metronome.beat = -1;

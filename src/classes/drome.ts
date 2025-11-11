@@ -92,8 +92,6 @@ class Drome {
 
   async start() {
     if (!this.clock.paused) return;
-    // await this.ctx.audioWorklet.addModule(bitcrusherUrl);
-    // console.log(new AudioWorkletNode(this.ctx, "bitcrush-processor"));
     await this.preloadSamples();
     this.clock.start();
   }

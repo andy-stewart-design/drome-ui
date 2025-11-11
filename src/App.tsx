@@ -131,7 +131,7 @@ d.addSamples(
 //   .euclid(3, 8)
 //   .env(0.01, 0, 1, 0.5)
 //   .crush(4);
-d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
+// d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
 // d.sample("bd:3").euclid(4, 4);
 // d.sample("hh").bank("tr808").euclid(4, 8, 1);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
@@ -157,7 +157,14 @@ d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
 
 // --------------------------------------------------
 // SAMPLES: CHOP + REVERSE
-// d.sample("rhodes").bank("loops").fit(2).chop(4).rev().cut().adsrMode("clip");
+d.sample("rhodes")
+  .bank("loops")
+  .fit(2)
+  .chop(4, [2, 3], [1, 0])
+  // .rev()
+  .cut();
+// .adsrMode("clip");
+// .adsr(0.1, 0, 1, 0.1);
 
 function App() {
   return (
