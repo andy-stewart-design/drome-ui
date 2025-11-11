@@ -1,11 +1,11 @@
 import BitcrusherEffect from "./effect-bitcrusher";
-import DelayEffect from "./delay-effect";
+import DelayEffect from "./effect-delay";
 import DromeArray from "./drome-array";
 import DromeCycle from "./drome-cycle";
 import DromeEffect from "./drome-effect";
 import Envelope from "./envelope";
 import LFO from "./lfo";
-import ReverbEffect from "./reverb-effect";
+import ReverbEffect from "./effect-reverb";
 import { isNullish, isEnvTuple, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
@@ -19,7 +19,7 @@ import type {
   Note,
   Nullable,
 } from "../types";
-import DistortionEffect from "./distortion-effect";
+import DistortionEffect from "./effect-distortion";
 
 type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
 
