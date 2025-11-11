@@ -3,6 +3,7 @@ import Envelope from "./envelope";
 import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
+import bitcrusherUrl from "./worklet-bitcrusher?url";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
 import { bufferId } from "../utils/cache-id";
@@ -48,6 +49,10 @@ class Drome {
     else return getSamplePath(bank, name, index);
   }
 
+  async init() {
+    await this.ctx.audioWorklet.addModule(bitcrusherUrl);
+  }
+
   addSamples(record: Record<string, string | string[]>, bank = "user") {
     const samples = Object.entries(record).map(([k, v]) => {
       return [k, Array.isArray(v) ? v : [v]] as const;
@@ -87,6 +92,8 @@ class Drome {
 
   async start() {
     if (!this.clock.paused) return;
+    // await this.ctx.audioWorklet.addModule(bitcrusherUrl);
+    // console.log(new AudioWorkletNode(this.ctx, "bitcrush-processor"));
     await this.preloadSamples();
     this.clock.start();
   }

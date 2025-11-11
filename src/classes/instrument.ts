@@ -1,10 +1,11 @@
-import DelayEffect from "./delay-effect";
+import BitcrusherEffect from "./effect-bitcrusher";
+import DelayEffect from "./effect-delay";
 import DromeArray from "./drome-array";
 import DromeCycle from "./drome-cycle";
 import DromeEffect from "./drome-effect";
 import Envelope from "./envelope";
 import LFO from "./lfo";
-import ReverbEffect from "./reverb-effect";
+import ReverbEffect from "./effect-reverb";
 import { isNullish, isEnvTuple, isLfoTuple } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
@@ -18,9 +19,9 @@ import type {
   Note,
   Nullable,
 } from "../types";
-import DistortionEffect from "./distortion-effect";
+import DistortionEffect from "./effect-distortion";
 
-type EffectName = "reverb" | "distortion" | "delay";
+type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -446,6 +447,16 @@ abstract class Instrument<T> {
     return this;
   }
 
+  crush(bitDepth: number, rateReduction = 1, mix = 1) {
+    const effect = new BitcrusherEffect(this._drome, {
+      bitDepth,
+      rateReduction,
+      mix,
+    });
+    this._effectsMap.set("bitcrush", effect);
+    return this;
+  }
+
   beforePlay(barStart: number, barDuration: number) {
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
@@ -460,7 +471,9 @@ abstract class Instrument<T> {
       };
     });
 
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart)); // stop current lfos to make sure that lfo period stays synced with bpm
+    // stop current lfos to make sure that lfo period stays synced with bpm
+    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
     const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
     const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
