@@ -17,9 +17,9 @@ d.addSamples(
   "vox"
 );
 
-// const env = d.env(0, 1).adsr(0.05, 1, 0);
-// const lfo = d.lfo(0.01, 1, 8).type("sine");
-// d.synth("triangle").gain(env).gain(lfo);
+const env = d.env(400, 800).adsr(0.05, 1, 0);
+const lfo = d.lfo(400, 800, 8).type("sine");
+d.synth("sawtooth").note(note).euclid(4, 4).bpf(env);
 // d.synth("triangle")
 //   .note(48)
 //   .euclid(4, 4)
@@ -157,12 +157,12 @@ d.addSamples(
 
 // --------------------------------------------------
 // SAMPLES: CHOP + REVERSE
-d.sample("rhodes")
-  .bank("loops")
-  .fit(2)
-  .chop(4, [2, 3], [1, 0])
-  // .rev()
-  .cut();
+// d.sample("rhodes")
+//   .bank("loops")
+//   .fit(2)
+//   .chop(4, [2, 3], [1, 0])
+//   // .rev()
+//   .cut();
 // .adsrMode("clip");
 // .adsr(0.1, 0, 1, 0.1);
 
