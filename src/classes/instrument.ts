@@ -174,16 +174,12 @@ abstract class Instrument<T> {
     barDuration: number
   ) {
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-    const filters = Array.from(this._filterMap.values()).map((filter) => {
-      filter.apply(notes, cycleIndex, barStart, barDuration);
-      return filter;
-    });
     const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
 
     if (!this._isConnected) {
       const chain = [
         panNode,
-        ...filters,
+        ...this._filterMap.values(),
         ...this._effectsMap.values(),
         this._postgainNode,
         this._destination,
@@ -191,9 +187,15 @@ abstract class Instrument<T> {
 
       chain.forEach((node, i) => {
         const nextNode = chain[i + 1];
-        if (nextNode instanceof DromeEffect) node.connect(nextNode.input);
-        else if (nextNode instanceof DromeFilter) node.connect(nextNode.input);
-        else if (nextNode) node.connect(nextNode);
+
+        if (nextNode instanceof DromeFilter) {
+          nextNode.apply(notes, cycleIndex, barStart, barDuration);
+          node.connect(nextNode.input);
+        } else if (nextNode instanceof DromeEffect) {
+          node.connect(nextNode.input);
+        } else if (nextNode) {
+          node.connect(nextNode);
+        }
       });
 
       this._connectorNode = chain[0] as AudioNode;

@@ -19,6 +19,12 @@ class Drome {
   readonly reverbCache: Map<string, AudioBuffer> = new Map();
   readonly userSamples: Map<string, Map<string, string[]>> = new Map();
 
+  static async init(bpm?: number) {
+    const drome = new Drome(bpm);
+    await drome.ctx.audioWorklet.addModule(bitcrusherUrl);
+    return drome;
+  }
+
   constructor(bpm?: number) {
     this.clock = new AudioClock(bpm);
     this.audioChannels = Array.from({ length: NUM_CHANNELS }, () => {
@@ -47,10 +53,6 @@ class Drome {
     const paths = this.userSamples.get(bank)?.get(name);
     if (paths) return paths[index % paths.length];
     else return getSamplePath(bank, name, index);
-  }
-
-  async init() {
-    await this.ctx.audioWorklet.addModule(bitcrusherUrl);
   }
 
   addSamples(record: Record<string, string | string[]>, bank = "user") {

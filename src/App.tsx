@@ -1,7 +1,6 @@
 import Drome from "./classes/drome";
 
-const d = new Drome(120);
-await d.init();
+const d = await Drome.init(120);
 
 const note = 48;
 
