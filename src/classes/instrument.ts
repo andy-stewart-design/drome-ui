@@ -130,18 +130,6 @@ abstract class Instrument<T> {
     }
   }
 
-  private applyFilters(
-    notes: Note<T>[],
-    cycleIndex: number,
-    startTime: number,
-    duration: number
-  ) {
-    return Array.from(this._filterMap.values()).map((filter) => {
-      filter.apply(notes, cycleIndex, startTime, duration);
-      return filter.node;
-    });
-  }
-
   private applyPan(
     notes: Note<T>[],
     cycleIndex: number,
@@ -179,10 +167,23 @@ abstract class Instrument<T> {
     applySteppedRamp({ target, startTime, duration, steps });
   }
 
-  private connectChain(...nodes: (AudioNode | AudioNode[])[]) {
+  private connectChain(
+    notes: Note<T>[],
+    cycleIndex: number,
+    barStart: number,
+    barDuration: number
+  ) {
+    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
+    const filters = Array.from(this._filterMap.values()).map((filter) => {
+      filter.apply(notes, cycleIndex, barStart, barDuration);
+      return filter;
+    });
+    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
+
     if (!this._isConnected) {
       const chain = [
-        ...nodes.flat(),
+        panNode,
+        ...filters,
         ...this._effectsMap.values(),
         this._postgainNode,
         this._destination,
@@ -191,6 +192,7 @@ abstract class Instrument<T> {
       chain.forEach((node, i) => {
         const nextNode = chain[i + 1];
         if (nextNode instanceof DromeEffect) node.connect(nextNode.input);
+        else if (nextNode instanceof DromeFilter) node.connect(nextNode.input);
         else if (nextNode) node.connect(nextNode);
       });
 
@@ -412,27 +414,27 @@ abstract class Instrument<T> {
   }
 
   beforePlay(barStart: number, barDuration: number) {
+    // stop current lfos to make sure that lfo period stays synced with bpm
+    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
     const cycle = this._cycles.at(cycleIndex);
-    const noteDuration = barDuration / cycle.length;
     const notes: Note<T>[] = cycle.map((value, i) => {
       if (isNullish(value)) return null;
       return {
         value,
-        start: barStart + i * noteDuration,
-        duration: noteDuration,
+        start: barStart + i * (barDuration / cycle.length),
+        duration: barDuration / cycle.length,
       };
     });
 
-    // stop current lfos to make sure that lfo period stays synced with bpm
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
-    this._filterMap.forEach((f) => f.stopLfo(barStart));
-
-    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-    const filters = this.applyFilters(notes, cycleIndex, barStart, barDuration);
-    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
-    const destination = this.connectChain(filters, panNode);
+    const destination = this.connectChain(
+      notes,
+      cycleIndex,
+      barStart,
+      barDuration
+    );
 
     return { notes, cycleIndex, destination };
   }

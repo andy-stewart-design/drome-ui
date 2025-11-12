@@ -18,8 +18,8 @@ d.addSamples(
 );
 
 const env = d.env(400, 800).adsr(0.05, 1, 0);
-const lfo = d.lfo(400, 800, 8).type("sine");
-d.synth("sawtooth").note(note).euclid(4, 4).bpf(env);
+const lfo = d.lfo(400, 800, 16).type("sine");
+d.synth("sawtooth").note(note).euclid(4, 4).bpf(lfo).crush(4);
 // d.synth("triangle")
 //   .note(48)
 //   .euclid(4, 4)

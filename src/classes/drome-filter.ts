@@ -57,6 +57,7 @@ class DromeFilter {
     startTime: number,
     duration: number
   ) {
+    this.stopLfo(startTime);
     const target = this._node.frequency;
 
     if (this._lfo) {
