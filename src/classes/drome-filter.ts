@@ -91,6 +91,10 @@ class DromeFilter extends DromeAudioNode {
   get lfo() {
     return this._lfo;
   }
+
+  get type() {
+    return this._input.type;
+  }
 }
 
 export default DromeFilter;

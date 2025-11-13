@@ -2,7 +2,7 @@ import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
 import DromeArray from "./drome-array";
 import DromeCycle from "./drome-cycle";
-import DromeEffect from "./drome-effect";
+// import DromeEffect from "./drome-effect";
 import Envelope from "./envelope";
 import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
@@ -13,7 +13,7 @@ import type {
   AdsrMode,
   AutomatableParam,
   AdsrEnvelope,
-  FilterType,
+  // FilterType,
   InstrumentType,
   Note,
   Nullable,
@@ -22,7 +22,7 @@ import DistortionEffect from "./effect-distortion";
 import DromeFilter from "./drome-filter";
 import DromeAudioNode from "./drome-audio-node";
 
-type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
+// type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -40,14 +40,15 @@ abstract class Instrument<T> {
   private _postgain: DromeArray<number>;
   private _detune: DromeArray<number> = new DromeArray([[0]]);
   private _pan: DromeArray<number> = new DromeArray([[0]]);
-  protected readonly _postgainNode: GainNode;
-  protected readonly _panNode: StereoPannerNode;
-  protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
-  protected readonly _gainNodes: Set<GainNode>;
-  protected _filterMap: Map<FilterType, DromeFilter>;
+  private readonly _postgainNode: GainNode;
+  private readonly _panNode: StereoPannerNode;
+  private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
+  private readonly _gainNodes: Set<GainNode>;
+  private _effects: Set<DromeAudioNode>;
+  // protected _filterMap: Map<FilterType, DromeFilter>;
+  // protected _effectsMap: Map<EffectName, DromeEffect>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
-  protected _effectsMap: Map<EffectName, DromeEffect>;
   protected _startTime: number | undefined;
   private _isConnected = false;
 
@@ -67,8 +68,9 @@ abstract class Instrument<T> {
     this._panNode = new StereoPannerNode(this.ctx);
     this._audioNodes = new Set();
     this._gainNodes = new Set();
-    this._filterMap = new Map();
-    this._effectsMap = new Map();
+    this._effects = new Set();
+    // this._filterMap = new Map();
+    // this._effectsMap = new Map();
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
     this._envMap = new Map([
@@ -100,17 +102,17 @@ abstract class Instrument<T> {
     return { envGain, effectGain, noteEnd };
   }
 
-  private createFilterEnvelope(type: FilterType, max: number, adsr: number[]) {
-    const filter = this._filterMap.get(type);
+  // private createFilterEnvelope(type: FilterType, max: number, adsr: number[]) {
+  //   const filter = this._filterMap.get(type);
 
-    if (!filter) {
-      const msg = `[DROME] must create a ${type} filter before setting its envelope`;
-      console.warn(msg);
-      return this;
-    }
+  //   if (!filter) {
+  //     const msg = `[DROME] must create a ${type} filter before setting its envelope`;
+  //     console.warn(msg);
+  //     return this;
+  //   }
 
-    filter.createEnvelope(max, adsr);
-  }
+  //   filter.createEnvelope(max, adsr);
+  // }
 
   protected applyDetune(
     node: OscillatorNode | AudioBufferSourceNode,
@@ -180,8 +182,9 @@ abstract class Instrument<T> {
     if (!this._isConnected) {
       const chain = [
         this._panNode,
-        ...this._filterMap.values(),
-        ...this._effectsMap.values(),
+        ...this._effects,
+        // ...this._filterMap.values(),
+        // ...this._effectsMap.values(),
         this._postgainNode,
         this._destination,
       ];
@@ -283,65 +286,71 @@ abstract class Instrument<T> {
   }
 
   bpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
-    this._filterMap.set(
-      "bandpass",
-      new DromeFilter(this.ctx, { type: "bandpass", frequency })
-    );
+    const f = new DromeFilter(this.ctx, { type: "bandpass", frequency });
+
+    // this._filterMap.set("bandpass", f);
+    this._effects.add(f);
 
     return this;
   }
 
-  bpenv(maxValue: number, ...adsr: number[]) {
-    this.createFilterEnvelope("bandpass", maxValue, adsr);
-    return this;
-  }
+  // bpenv(maxValue: number, ...adsr: number[]) {
+  //   this.createFilterEnvelope("bandpass", maxValue, adsr);
+  //   return this;
+  // }
 
   bpq(v: number) {
-    this._filterMap
-      .get("bandpass")
-      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
+    Array.from(this._effects).forEach((e) => {
+      if (e instanceof DromeFilter && e.type === "bandpass") {
+        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+      }
+    });
     return this;
   }
 
   hpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
-    this._filterMap.set(
-      "highpass",
-      new DromeFilter(this.ctx, { type: "highpass", frequency })
-    );
+    const f = new DromeFilter(this.ctx, { type: "highpass", frequency });
+
+    // this._filterMap.set("highpass", f);
+    this._effects.add(f);
 
     return this;
   }
 
-  hpenv(maxValue: number, ...adsr: number[]) {
-    this.createFilterEnvelope("highpass", maxValue, adsr);
-    return this;
-  }
+  // hpenv(maxValue: number, ...adsr: number[]) {
+  //   this.createFilterEnvelope("highpass", maxValue, adsr);
+  //   return this;
+  // }
 
   hpq(v: number) {
-    this._filterMap
-      .get("highpass")
-      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
+    Array.from(this._effects).forEach((e) => {
+      if (e instanceof DromeFilter && e.type === "highpass") {
+        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+      }
+    });
     return this;
   }
 
   lpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
-    this._filterMap.set(
-      "lowpass",
-      new DromeFilter(this.ctx, { type: "lowpass", frequency })
-    );
+    const f = new DromeFilter(this.ctx, { type: "lowpass", frequency });
+
+    // this._filterMap.set("lowpass", f);
+    this._effects.add(f);
 
     return this;
   }
 
-  lpenv(maxValue: number, ...adsr: number[]) {
-    this.createFilterEnvelope("lowpass", maxValue, adsr);
-    return this;
-  }
+  // lpenv(maxValue: number, ...adsr: number[]) {
+  //   this.createFilterEnvelope("lowpass", maxValue, adsr);
+  //   return this;
+  // }
 
   lpq(v: number) {
-    this._filterMap
-      .get("lowpass")
-      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
+    Array.from(this._effects).forEach((e) => {
+      if (e instanceof DromeFilter && e.type === "lowpass") {
+        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+      }
+    });
     return this;
   }
 
@@ -375,34 +384,37 @@ abstract class Instrument<T> {
   reverb(a?: number, b?: number, c?: number, d?: number): this;
   reverb(a?: number, b?: string, c?: string): this;
   reverb(mix = 0.2, b: unknown = 1, c: unknown = 1600, d?: number) {
-    let reverb: ReverbEffect;
+    let effect: ReverbEffect;
 
     if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
       const opts = { mix, decay: b, lpfStart: c, lpfEnd };
-      reverb = new ReverbEffect(this._drome, opts);
+      effect = new ReverbEffect(this._drome, opts);
     } else {
       const name = typeof b === "string" ? b : "echo";
       const bank = typeof c === "string" ? c : "fx";
       const src = name.startsWith("https")
         ? ({ registered: false, url: name } as const)
         : ({ registered: true, name, bank } as const);
-      reverb = new ReverbEffect(this._drome, { mix, src });
+      effect = new ReverbEffect(this._drome, { mix, src });
     }
 
-    this._effectsMap.set("reverb", reverb);
+    // this._effectsMap.set("reverb", effect);
+    this._effects.add(effect);
     return this;
   }
 
   delay(delayTime = 0.25, feedback = 0.1, mix = 0.2) {
-    const delay = new DelayEffect(this._drome, { delayTime, feedback, mix });
-    this._effectsMap.set("delay", delay);
+    const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
+    // this._effectsMap.set("delay", effect);
+    this._effects.add(effect);
     return this;
   }
 
   distort(amount = 50, mix = 0.5) {
-    const dist = new DistortionEffect(this._drome, { amount, mix });
-    this._effectsMap.set("distortion", dist);
+    const effect = new DistortionEffect(this._drome, { amount, mix });
+    // this._effectsMap.set("distortion", effect);
+    this._effects.add(effect);
     return this;
   }
 
@@ -412,7 +424,8 @@ abstract class Instrument<T> {
       rateReduction,
       mix,
     });
-    this._effectsMap.set("bitcrush", effect);
+    // this._effectsMap.set("bitcrush", effect);
+    this._effects.add(effect);
     return this;
   }
 
