@@ -20,6 +20,7 @@ import type {
 } from "../types";
 import DistortionEffect from "./effect-distortion";
 import DromeFilter from "./drome-filter";
+import DromeAudioNode from "./drome-audio-node";
 
 type EffectName = "reverb" | "distortion" | "delay" | "bitcrush";
 
@@ -174,11 +175,11 @@ abstract class Instrument<T> {
     barDuration: number
   ) {
     this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-    const panNode = this.applyPan(notes, cycleIndex, barStart, barDuration);
+    this.applyPan(notes, cycleIndex, barStart, barDuration);
 
     if (!this._isConnected) {
       const chain = [
-        panNode,
+        this._panNode,
         ...this._filterMap.values(),
         ...this._effectsMap.values(),
         this._postgainNode,
@@ -188,17 +189,17 @@ abstract class Instrument<T> {
       chain.forEach((node, i) => {
         const nextNode = chain[i + 1];
 
-        if (nextNode instanceof DromeFilter) {
-          nextNode.apply(notes, cycleIndex, barStart, barDuration);
-          node.connect(nextNode.input);
-        } else if (nextNode instanceof DromeEffect) {
+        if (nextNode instanceof DromeAudioNode) {
+          if (nextNode instanceof DromeFilter)
+            nextNode.apply(notes, cycleIndex, barStart, barDuration);
           node.connect(nextNode.input);
         } else if (nextNode) {
           node.connect(nextNode);
         }
       });
 
-      this._connectorNode = chain[0] as AudioNode;
+      this._connectorNode =
+        chain[0] instanceof DromeAudioNode ? chain[0].input : chain[0];
       this._isConnected = true;
     }
 
@@ -298,7 +299,7 @@ abstract class Instrument<T> {
   bpq(v: number) {
     this._filterMap
       .get("bandpass")
-      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
+      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 
@@ -319,7 +320,7 @@ abstract class Instrument<T> {
   hpq(v: number) {
     this._filterMap
       .get("highpass")
-      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
+      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 
@@ -340,7 +341,7 @@ abstract class Instrument<T> {
   lpq(v: number) {
     this._filterMap
       .get("lowpass")
-      ?.node.Q.setValueAtTime(v, this.ctx.currentTime);
+      ?.input.Q.setValueAtTime(v, this.ctx.currentTime);
     return this;
   }
 

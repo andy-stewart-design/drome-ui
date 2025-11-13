@@ -1,4 +1,5 @@
 import DromeArray from "./drome-array";
+import DromeAudioNode from "./drome-audio-node";
 import Envelope from "./envelope";
 import LFO from "./lfo";
 import type { FilterType, Note } from "../types";
@@ -10,14 +11,15 @@ interface DromeFilterOptions {
   frequency: (number | number[])[] | [LFO] | [Envelope];
 }
 
-class DromeFilter {
-  private _node: BiquadFilterNode;
+class DromeFilter extends DromeAudioNode {
+  protected _input: BiquadFilterNode;
   private _baseFrequency: number;
   private _frequencies: DromeArray<number>;
   private _lfo: LFO | undefined;
   private _env: Envelope | undefined;
 
   constructor(ctx: AudioContext, opts: DromeFilterOptions) {
+    super();
     const { type, frequency } = opts;
 
     if (isLfoTuple(frequency)) {
@@ -33,7 +35,7 @@ class DromeFilter {
       this._baseFrequency = this._frequencies.at(0, 0);
     }
 
-    this._node = new BiquadFilterNode(ctx, {
+    this._input = new BiquadFilterNode(ctx, {
       type,
       frequency: this._baseFrequency,
     });
@@ -58,7 +60,7 @@ class DromeFilter {
     duration: number
   ) {
     this.stopLfo(startTime);
-    const target = this._node.frequency;
+    const target = this._input.frequency;
 
     if (this._lfo) {
       this._lfo.create().connect(target).start(startTime);
@@ -75,19 +77,15 @@ class DromeFilter {
   }
 
   connect(dest: AudioNode) {
-    this._node.connect(dest);
+    this._input.connect(dest);
   }
 
   disconnect() {
-    this._node.disconnect();
-  }
-
-  get node() {
-    return this._node;
+    this._input.disconnect();
   }
 
   get input() {
-    return this._node;
+    return this._input;
   }
 
   get lfo() {
