@@ -34,12 +34,12 @@ interface InstrumentOptions<T> {
 abstract class Instrument<T> {
   protected _drome: Drome;
   private _destination: AudioNode;
-  private _connectorNode: AudioNode; // TODO: try to remove this prop
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
   private _postgain: DromeArray<number>;
   private _detune: DromeArray<number> = new DromeArray([[0]]);
   private _pan: DromeArray<number> = new DromeArray([[0]]);
+  private _sourceNode: GainNode;
   private readonly _postgainNode: GainNode;
   private readonly _panNode: StereoPannerNode;
   private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
@@ -60,10 +60,10 @@ abstract class Instrument<T> {
   constructor(drome: Drome, opts: InstrumentOptions<T>) {
     this._drome = drome;
     this._destination = opts.destination;
-    this._connectorNode = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
     this._postgain = new DromeArray([[1]]);
+    this._sourceNode = new GainNode(drome.ctx);
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._panNode = new StereoPannerNode(this.ctx);
     this._audioNodes = new Set();
@@ -181,8 +181,9 @@ abstract class Instrument<T> {
 
     if (!this._isConnected) {
       const chain = [
-        this._panNode,
+        this._sourceNode,
         ...this._effects,
+        this._panNode,
         // ...this._filterMap.values(),
         // ...this._effectsMap.values(),
         this._postgainNode,
@@ -201,12 +202,10 @@ abstract class Instrument<T> {
         }
       });
 
-      this._connectorNode =
-        chain[0] instanceof DromeAudioNode ? chain[0].input : chain[0];
       this._isConnected = true;
     }
 
-    return this._connectorNode;
+    return this._sourceNode;
   }
 
   note(...input: (Nullable<T> | Nullable<T>[])[]) {
