@@ -13,8 +13,9 @@ interface DromeFilterOptions {
 
 class DromeFilter extends DromeAudioNode {
   protected _input: BiquadFilterNode;
-  private _baseFrequency: number;
-  private _frequencies: DromeArray<number>;
+  private _target: AudioParam;
+  private _defaultValue: number;
+  private _cycles: DromeArray<number>;
   private _lfo: LFO | undefined;
   private _env: Envelope | undefined;
 
@@ -23,26 +24,27 @@ class DromeFilter extends DromeAudioNode {
     const { type, frequency } = opts;
 
     if (isLfoTuple(frequency)) {
-      this._baseFrequency = frequency[0].value;
-      this._frequencies = new DromeArray([[this._baseFrequency]]);
+      this._defaultValue = frequency[0].value;
+      this._cycles = new DromeArray([[this._defaultValue]]);
       this._lfo = frequency[0];
     } else if (isEnvTuple(frequency)) {
-      this._baseFrequency = frequency[0].startValue;
-      this._frequencies = new DromeArray([[this._baseFrequency]]);
+      this._defaultValue = frequency[0].startValue;
+      this._cycles = new DromeArray([[this._defaultValue]]);
       this._env = frequency[0];
     } else {
-      this._frequencies = new DromeArray([[0]]).note(...frequency);
-      this._baseFrequency = this._frequencies.at(0, 0);
+      this._cycles = new DromeArray([[0]]).note(...frequency);
+      this._defaultValue = this._cycles.at(0, 0);
     }
 
     this._input = new BiquadFilterNode(ctx, {
       type,
-      frequency: this._baseFrequency,
+      frequency: this._defaultValue,
     });
+    this._target = this._input.frequency;
   }
 
   createEnvelope(max: number, adsr: number[]) {
-    this._env = new Envelope(this._baseFrequency, max, 30)
+    this._env = new Envelope(this._defaultValue, max, 30)
       .att(adsr[0] ?? 0.125)
       .dec(adsr[1] ?? 0.125)
       .sus(adsr[2] ?? 1)
@@ -59,20 +61,21 @@ class DromeFilter extends DromeAudioNode {
     startTime: number,
     duration: number
   ) {
-    this.stopLfo(startTime);
-    const target = this._input.frequency;
+    if (this._lfo && !this._lfo.paused) this._lfo.stop(startTime);
 
     if (this._lfo) {
-      this._lfo.create().connect(target).start(startTime);
+      this._lfo.create().connect(this._target).start(startTime);
     } else if (this._env) {
       for (let i = 0; i < notes.length; i++) {
         const note = notes[i];
         if (isNullish(note)) continue;
-        this._env.apply(target, note.start, note.duration - 0.001);
+        this._env.apply(this._target, note.start, note.duration - 0.001);
       }
     } else {
-      const steps = this._frequencies.at(cycleIndex);
-      applySteppedRamp({ target, startTime, duration, steps });
+      const steps = this._cycles.at(cycleIndex);
+      console.log(steps);
+
+      applySteppedRamp({ target: this._target, startTime, duration, steps });
     }
   }
 
