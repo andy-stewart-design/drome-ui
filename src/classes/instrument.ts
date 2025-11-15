@@ -1,7 +1,11 @@
+import AutomatableEffect from "./automatable-effect";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
+import DistortionEffect from "./effect-distortion";
 import DromeArray from "./drome-array";
+import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
+import DromeFilter from "./drome-filter";
 import PanEffect from "./effect-pan";
 import Envelope from "./envelope";
 import LFO from "./lfo";
@@ -17,9 +21,6 @@ import type {
   Note,
   Nullable,
 } from "../types";
-import DistortionEffect from "./effect-distortion";
-import DromeFilter from "./drome-filter";
-import DromeAudioNode from "./drome-audio-node";
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -39,7 +40,7 @@ abstract class Instrument<T> {
   private readonly _postgainNode: GainNode;
   private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
   private readonly _gainNodes: Set<GainNode>;
-  private _effects: Set<DromeAudioNode>;
+  private _signalChain: Set<DromeAudioNode>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
@@ -60,7 +61,7 @@ abstract class Instrument<T> {
     this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._audioNodes = new Set();
     this._gainNodes = new Set();
-    this._effects = new Set();
+    this._signalChain = new Set();
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
     this._envMap = new Map([
@@ -132,13 +133,13 @@ abstract class Instrument<T> {
 
     const chain = [
       this._sourceNode,
-      ...this._effects,
+      ...this._signalChain,
       this._postgainNode,
       this._destination,
     ];
 
     chain.forEach((node, i) => {
-      if (node instanceof DromeFilter || node instanceof PanEffect)
+      if (node instanceof AutomatableEffect)
         node.apply(notes, cycleIndex, barStart, barDuration);
 
       if (this._isConnected) return;
@@ -232,13 +233,13 @@ abstract class Instrument<T> {
   bpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
     const f = new DromeFilter(this.ctx, { type: "bandpass", frequency });
 
-    this._effects.add(f);
+    this._signalChain.add(f);
 
     return this;
   }
 
   bpq(v: number) {
-    Array.from(this._effects).forEach((e) => {
+    Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "bandpass") {
         e.input.Q.setValueAtTime(v, this.ctx.currentTime);
       }
@@ -249,13 +250,13 @@ abstract class Instrument<T> {
   hpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
     const f = new DromeFilter(this.ctx, { type: "highpass", frequency });
 
-    this._effects.add(f);
+    this._signalChain.add(f);
 
     return this;
   }
 
   hpq(v: number) {
-    Array.from(this._effects).forEach((e) => {
+    Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "highpass") {
         e.input.Q.setValueAtTime(v, this.ctx.currentTime);
       }
@@ -266,13 +267,13 @@ abstract class Instrument<T> {
   lpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
     const f = new DromeFilter(this.ctx, { type: "lowpass", frequency });
 
-    this._effects.add(f);
+    this._signalChain.add(f);
 
     return this;
   }
 
   lpq(v: number) {
-    Array.from(this._effects).forEach((e) => {
+    Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "lowpass") {
         e.input.Q.setValueAtTime(v, this.ctx.currentTime);
       }
@@ -295,7 +296,7 @@ abstract class Instrument<T> {
   pan(...pan: (number | number[])[] | [LFO] | [Envelope]) {
     const effect = new PanEffect(this.ctx, { pan });
 
-    this._effects.add(effect);
+    this._signalChain.add(effect);
 
     return this;
   }
@@ -321,19 +322,19 @@ abstract class Instrument<T> {
       effect = new ReverbEffect(this._drome, { mix, src });
     }
 
-    this._effects.add(effect);
+    this._signalChain.add(effect);
     return this;
   }
 
   delay(delayTime = 0.25, feedback = 0.1, mix = 0.2) {
     const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
-    this._effects.add(effect);
+    this._signalChain.add(effect);
     return this;
   }
 
   distort(amount = 50, mix = 0.5) {
     const effect = new DistortionEffect(this._drome, { amount, mix });
-    this._effects.add(effect);
+    this._signalChain.add(effect);
     return this;
   }
 
@@ -343,7 +344,7 @@ abstract class Instrument<T> {
       rateReduction,
       mix,
     });
-    this._effects.add(effect);
+    this._signalChain.add(effect);
     return this;
   }
 

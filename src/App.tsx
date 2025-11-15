@@ -17,10 +17,10 @@ d.addSamples(
 );
 
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
-// const lfo = d.lfo(400, 1600, 16).type("sine");
-// const lfo2 = d.lfo(-1, 1, 16).type("sine");
-// d.synth("triangle").note(note).euclid(4, 4).lpf(lfo).crush(4).pan(lfo2);
-d.synth("triangle").note(note).euclid(4, 4).lpf([600, 1200]);
+const lfo = d.lfo(400, 1600, 16).type("sine");
+const lfo2 = d.lfo(-1, 1, 16).type("sine");
+d.synth("triangle").note(note).euclid(4, 4).lpf(lfo).crush(4).pan(lfo2);
+// d.synth("triangle").note(note).euclid(4, 4).lpf([600, 1200]);
 // d.synth("triangle").note(note).gain([0.1, 1]).euclid(4, 4).lpf(600);
 // d.synth("triangle")
 //   .note(48)
@@ -119,11 +119,11 @@ d.synth("triangle").note(note).euclid(4, 4).lpf([600, 1200]);
 
 // --------------------------------------------------
 // SAMPLES: BASIC
-d.sample("hh:1")
-  .bank("tr909")
-  .euclid(8, 8)
-  .pan([0.875, -0.875])
-  .gain([0.5, 0.25]);
+// d.sample("hh:1")
+//   .bank("tr909")
+//   .euclid(8, 8)
+//   .pan([0.875, -0.875])
+//   .gain([0.5, 0.25]);
 // d.sample("oh:1").bank("tr909").euclid(4, 8, 1).pan(-0.875).gain(0.75);
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
 // d.sample("bd:0")
