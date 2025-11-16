@@ -19,7 +19,13 @@ d.addSamples(
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
 const lfo = d.lfo(400, 1600, 16).type("sine");
 const lfo2 = d.lfo(-1, 1, 16).type("sine");
-d.synth("triangle").note(note).euclid(4, 4).lpf(lfo).crush(4).pan(lfo2);
+d.synth("triangle")
+  .note(note)
+  .euclid(4, 4)
+  .lpf(lfo)
+  .crush(4)
+  .pan(lfo2)
+  .postgain(d.env(0, 1).adsr(0.05, 1, 0));
 // d.synth("triangle").note(note).euclid(4, 4).lpf([600, 1200]);
 // d.synth("triangle").note(note).gain([0.1, 1]).euclid(4, 4).lpf(600);
 // d.synth("triangle")

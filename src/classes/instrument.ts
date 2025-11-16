@@ -1,3 +1,6 @@
+// TODO: remove lfo and env maps
+// TODO: DetuneEffect class with a similar interface to AutomatableEffect class
+
 import AutomatableEffect from "./automatable-effect";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
@@ -6,12 +9,12 @@ import DromeArray from "./drome-array";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./drome-filter";
+import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
 import Envelope from "./envelope";
 import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
 import { isNullish } from "../utils/validators";
-import { applySteppedRamp } from "../utils/stepped-ramp";
 import type Drome from "./drome";
 import type {
   AdsrMode,
@@ -31,20 +34,18 @@ interface InstrumentOptions<T> {
 
 abstract class Instrument<T> {
   protected _drome: Drome;
+  private _sourceNode: GainNode;
   private _destination: AudioNode;
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
-  private _postgain: DromeArray<number>;
-  private _detune: DromeArray<number> = new DromeArray([[0]]);
-  private _sourceNode: GainNode;
-  private readonly _postgainNode: GainNode;
-  private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
-  private readonly _gainNodes: Set<GainNode>;
+  private _detune: DromeArray<number>;
   private _signalChain: Set<DromeAudioNode>;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
+  private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
+  private readonly _gainNodes: Set<GainNode>;
 
   // Method Aliases
   env: (a: number, d?: number, s?: number, r?: number) => this;
@@ -56,9 +57,8 @@ abstract class Instrument<T> {
     this._destination = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
-    this._postgain = new DromeArray([[1]]);
+    this._detune = new DromeArray([[0]]);
     this._sourceNode = new GainNode(drome.ctx);
-    this._postgainNode = new GainNode(drome.ctx, { gain: 1 });
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._signalChain = new Set();
@@ -112,31 +112,13 @@ abstract class Instrument<T> {
     }
   }
 
-  private applyPostgain(
-    _notes: Note<T>[],
-    cycleIndex: number,
-    startTime: number,
-    duration: number
-  ) {
-    const target = this._postgainNode.gain;
-    const steps = this._postgain.at(cycleIndex);
-    applySteppedRamp({ target, startTime, duration, steps });
-  }
-
   private connectChain(
     notes: Note<T>[],
     cycleIndex: number,
     barStart: number,
     barDuration: number
   ) {
-    this.applyPostgain(notes, cycleIndex, barStart, barDuration);
-
-    const chain = [
-      this._sourceNode,
-      ...this._signalChain,
-      this._postgainNode,
-      this._destination,
-    ];
+    const chain = [this._sourceNode, ...this._signalChain, this._destination];
 
     chain.forEach((node, i) => {
       if (node instanceof AutomatableEffect)
@@ -169,6 +151,7 @@ abstract class Instrument<T> {
     return this;
   }
 
+  // TODO: change this to `.vga()`
   gain(a: number | number[] | LFO | Envelope, ...v: (number | number[])[]) {
     if (a instanceof LFO) {
       this._gain.note(a.value);
@@ -183,15 +166,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  postgain(...v: (number | number[])[]) {
-    const firstValue = v.reduce<number>((acc, item) => {
-      if (acc !== 1) return acc;
-      if (typeof item === "number") return item;
-      if (Array.isArray(item) && item.length > 0) return item[0];
-      return acc;
-    }, 1);
-    this._postgainNode.gain.value = firstValue;
-    this._postgain.note(...v);
+  // TODO: change this to `.gain()`
+  postgain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
+    const effect = new GainEffect(this.ctx, { gain });
+
+    this._signalChain.add(effect);
 
     return this;
   }
@@ -411,7 +390,6 @@ abstract class Instrument<T> {
         lfo.stop();
         lfo.disconnect();
       });
-      this._postgainNode.disconnect();
       this._isConnected = false;
     }, 100);
   }
