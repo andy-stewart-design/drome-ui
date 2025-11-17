@@ -44,10 +44,11 @@ abstract class Instrument<T> {
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
   private _isConnected = false;
-  private readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
-  private readonly _gainNodes: Set<GainNode>;
+  protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
+  protected readonly _gainNodes: Set<GainNode>;
 
   // Method Aliases
+  amp: (a: number | number[] | LFO, ...v: (number | number[])[]) => this;
   env: (a: number, d?: number, s?: number, r?: number) => this;
   envMode: (mode: AdsrMode) => this;
   rev: () => this;
@@ -67,6 +68,8 @@ abstract class Instrument<T> {
     this._envMap = new Map([
       ["gain", new Envelope(0, opts.baseGain || 1).adsr(a, d, s, r)],
     ]);
+
+    this.amp = this.amplitude.bind(this);
     this.env = this.adsr.bind(this);
     this.envMode = this.adsrMode.bind(this);
     this.rev = this.reverse.bind(this);
@@ -151,32 +154,13 @@ abstract class Instrument<T> {
     return this;
   }
 
-  // TODO: change this to `.vga()`
-  gain(a: number | number[] | LFO | Envelope, ...v: (number | number[])[]) {
+  amplitude(a: number | number[] | LFO, ...v: (number | number[])[]) {
     if (a instanceof LFO) {
       this._gain.note(a.value);
       this._lfoMap.set("gain", a);
-    } else if (a instanceof Envelope) {
-      this._gain.note(a.maxValue);
-      a.maxValue = this._gainEnv.maxValue;
-      this._envMap.set("gain", a);
     } else {
       this._gain.note(a, ...v);
     }
-    return this;
-  }
-
-  // TODO: change this to `.gain()`
-  postgain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
-    const effect = new GainEffect(this.ctx, { gain });
-
-    this._signalChain.add(effect);
-
-    return this;
-  }
-
-  adsrMode(mode: AdsrMode) {
-    this._envMap.forEach((env) => env.mode(mode));
     return this;
   }
 
@@ -206,6 +190,20 @@ abstract class Instrument<T> {
 
   rel(v: number) {
     this._gainEnv.rel(v);
+    return this;
+  }
+
+  // TODO: Add env getter to effects
+  adsrMode(mode: AdsrMode) {
+    // this._envMap.forEach((env) => env.mode(mode));
+    return this;
+  }
+
+  gain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
+    const effect = new GainEffect(this.ctx, { gain });
+
+    this._signalChain.add(effect);
+
     return this;
   }
 

@@ -29,9 +29,9 @@ export default class Synth extends Instrument<number | number[]> {
             frequency: midiToFrequency(midiNote),
             type,
           });
-          this.applyDetune(osc, note, cycleIndex, chordIndex);
           this._audioNodes.add(osc);
 
+          this.applyDetune(osc, note, cycleIndex, chordIndex);
           const { effectGain, noteEnd, envGain } = this.createGain(
             note.start,
             note.duration,
