@@ -1,5 +1,6 @@
 // TODO: remove lfo and env maps
-// TODO: DetuneEffect class with a similar interface to AutomatableEffect class
+// TODO: split SourceEffects class into separate classes with a SourceEffect abstract
+// ~~TODO: DetuneEffect class with a similar interface to AutomatableEffect class~~
 
 import AutomatableEffect from "./automatable-effect";
 import BitcrusherEffect from "./effect-bitcrusher";
@@ -9,9 +10,10 @@ import DromeArray from "./drome-array";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./drome-filter";
+import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
-import Envelope from "./envelope";
+import SourceEffects from "./effects-source";
 import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
 import { isNullish } from "../utils/validators";
@@ -38,8 +40,9 @@ abstract class Instrument<T> {
   private _destination: AudioNode;
   protected _cycles: DromeCycle<T>;
   private _gain: DromeArray<number>;
-  private _detune: DromeArray<number>;
+  // private _detune: DromeArray<number>;
   private _signalChain: Set<DromeAudioNode>;
+  private _srcEffects: SourceEffects;
   protected _lfoMap: Map<AutomatableParam, LFO>;
   protected _envMap: Map<AutomatableParam, Envelope>;
   protected _startTime: number | undefined;
@@ -58,11 +61,12 @@ abstract class Instrument<T> {
     this._destination = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
     this._gain = new DromeArray([[1]]);
-    this._detune = new DromeArray([[0]]);
+    // this._detune = new DromeArray([[0]]);
     this._sourceNode = new GainNode(drome.ctx);
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._signalChain = new Set();
+    this._srcEffects = new SourceEffects(drome, opts.baseGain, opts.adsr);
     this._lfoMap = new Map();
     const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
     this._envMap = new Map([
@@ -77,23 +81,12 @@ abstract class Instrument<T> {
 
   protected createGain(start: number, dur: number, chordIndex: number) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const lfo = this._lfoMap.get("gain");
-    const effectGain = new GainNode(this.ctx, {
-      gain: this._gain.at(cycleIndex, chordIndex),
-    });
-    const envGain = new GainNode(this.ctx, {
-      gain: this._gainEnv.maxValue,
-    });
+    const gain = this._srcEffects.applyGain(start, dur, cycleIndex, chordIndex);
 
-    const noteEnd = this._gainEnv.apply(envGain.gain, start, dur);
+    this._gainNodes.add(gain.envGain);
+    this._gainNodes.add(gain.effectGain);
 
-    if (lfo?.paused) lfo.create().connect(effectGain.gain).start(start);
-    else if (lfo) lfo.connect(effectGain.gain);
-
-    this._gainNodes.add(envGain);
-    this._gainNodes.add(effectGain);
-
-    return { envGain, effectGain, noteEnd };
+    return gain;
   }
 
   protected applyDetune(
@@ -102,17 +95,7 @@ abstract class Instrument<T> {
     cycleIndex: number,
     chordIndex: number
   ) {
-    const env = this._envMap.get("detune");
-    const lfo = this._lfoMap.get("detune");
-
-    if (lfo) {
-      if (lfo.paused) lfo.create().connect(node.detune).start(note.start);
-      else lfo.connect(node.detune);
-    } else if (env) {
-      env.apply(node.detune, note.start, note.duration - 0.001);
-    } else {
-      node.detune.value = this._detune.at(cycleIndex, chordIndex);
-    }
+    this._srcEffects.applyDetune(node, note, cycleIndex, chordIndex);
   }
 
   private connectChain(
@@ -165,31 +148,31 @@ abstract class Instrument<T> {
   }
 
   adsr(a: number, d?: number, s?: number, r?: number) {
-    this._gainEnv.att(a);
-    if (typeof d === "number") this._gainEnv.dec(d);
-    if (typeof s === "number") this._gainEnv.sus(s);
-    if (typeof r === "number") this._gainEnv.rel(r);
+    this._srcEffects.gainEnv.att(a);
+    if (typeof d === "number") this._srcEffects.gainEnv.dec(d);
+    if (typeof s === "number") this._srcEffects.gainEnv.sus(s);
+    if (typeof r === "number") this._srcEffects.gainEnv.rel(r);
 
     return this;
   }
 
   att(v: number) {
-    this._gainEnv.att(v);
+    this._srcEffects.gainEnv.att(v);
     return this;
   }
 
   dec(v: number) {
-    this._gainEnv.dec(v);
+    this._srcEffects.gainEnv.dec(v);
     return this;
   }
 
   sus(v: number) {
-    this._gainEnv.sus(v);
+    this._srcEffects.gainEnv.sus(v);
     return this;
   }
 
   rel(v: number) {
-    this._gainEnv.rel(v);
+    this._srcEffects.gainEnv.rel(v);
     return this;
   }
 
@@ -258,15 +241,10 @@ abstract class Instrument<T> {
     return this;
   }
 
+  // detune(...v: (number | number[])[] | [Envelope] | [LFO]) {
+
   detune(a: number | number[] | LFO | Envelope, ...v: (number | number[])[]) {
-    if (a instanceof LFO) {
-      this._detune.note(a.value);
-      this._lfoMap.set("detune", a);
-    } else if (a instanceof Envelope) {
-      this._envMap.set("detune", a);
-    } else {
-      this._detune.note(a, ...v);
-    }
+    this._srcEffects.detune(a, ...v);
     return this;
   }
 
@@ -328,6 +306,7 @@ abstract class Instrument<T> {
   beforePlay(barStart: number, barDuration: number) {
     // stop current lfos to make sure that lfo period stays synced with bpm
     this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+    this._srcEffects.reset();
 
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
@@ -400,16 +379,16 @@ abstract class Instrument<T> {
     return "rate" in this ? "sample" : "synth";
   }
 
-  get _gainEnv() {
-    const gainEnv = this._envMap.get("gain");
+  // get _gainEnv() {
+  //   const gainEnv = this._envMap.get("gain");
 
-    if (!gainEnv) {
-      const msg = "[DROME] cannot access baseGain env before it has been set";
-      throw new Error(msg);
-    }
+  //   if (!gainEnv) {
+  //     const msg = "[DROME] cannot access baseGain env before it has been set";
+  //     throw new Error(msg);
+  //   }
 
-    return gainEnv;
-  }
+  //   return gainEnv;
+  // }
 }
 
 export default Instrument;
