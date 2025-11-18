@@ -1,26 +1,22 @@
-// TODO: remove lfo and env maps
-// TODO: split SourceEffects class into separate classes with a SourceEffect abstract
-// ~~TODO: DetuneEffect class with a similar interface to AutomatableEffect class~~
+// TODO: Revisit instrument cleanup method and generally tidy up
 
 import AutomatableEffect from "./automatable-effect";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
 import DistortionEffect from "./effect-distortion";
-import DromeArray from "./drome-array";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./drome-filter";
 import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
-import SourceEffects from "./effects-source";
 import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
+import { DetuneSourceEffect, GainSourceEffect } from "./effect-source";
 import { isNullish } from "../utils/validators";
 import type Drome from "./drome";
 import type {
   AdsrMode,
-  AutomatableParam,
   AdsrEnvelope,
   InstrumentType,
   Note,
@@ -36,15 +32,12 @@ interface InstrumentOptions<T> {
 
 abstract class Instrument<T> {
   protected _drome: Drome;
-  private _sourceNode: GainNode;
-  private _destination: AudioNode;
   protected _cycles: DromeCycle<T>;
-  private _gain: DromeArray<number>;
-  // private _detune: DromeArray<number>;
+  private _gain: GainSourceEffect;
+  private _detune: DetuneSourceEffect;
+  private _sourceNode: GainNode;
   private _signalChain: Set<DromeAudioNode>;
-  private _srcEffects: SourceEffects;
-  protected _lfoMap: Map<AutomatableParam, LFO>;
-  protected _envMap: Map<AutomatableParam, Envelope>;
+  private _destination: AudioNode;
   protected _startTime: number | undefined;
   private _isConnected = false;
   protected readonly _audioNodes: Set<OscillatorNode | AudioBufferSourceNode>;
@@ -60,18 +53,13 @@ abstract class Instrument<T> {
     this._drome = drome;
     this._destination = opts.destination;
     this._cycles = new DromeCycle(opts.defaultCycle ?? []);
-    this._gain = new DromeArray([[1]]);
-    // this._detune = new DromeArray([[0]]);
     this._sourceNode = new GainNode(drome.ctx);
     this._audioNodes = new Set();
     this._gainNodes = new Set();
     this._signalChain = new Set();
-    this._srcEffects = new SourceEffects(drome, opts.baseGain, opts.adsr);
-    this._lfoMap = new Map();
-    const { a, d, s, r } = opts.adsr ?? { a: 0.005, d: 0, s: 1, r: 0.01 };
-    this._envMap = new Map([
-      ["gain", new Envelope(0, opts.baseGain || 1).adsr(a, d, s, r)],
-    ]);
+    const { baseGain, adsr } = opts;
+    this._gain = new GainSourceEffect(drome, baseGain, adsr);
+    this._detune = new DetuneSourceEffect(drome);
 
     this.amp = this.amplitude.bind(this);
     this.env = this.adsr.bind(this);
@@ -79,23 +67,36 @@ abstract class Instrument<T> {
     this.rev = this.reverse.bind(this);
   }
 
-  protected createGain(start: number, dur: number, chordIndex: number) {
+  protected createGain(
+    node: OscillatorNode | AudioBufferSourceNode,
+    start: number,
+    duration: number,
+    chordIndex: number
+  ) {
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
-    const gain = this._srcEffects.applyGain(start, dur, cycleIndex, chordIndex);
+    const { envGain, effectGain, noteEnd } = this._gain.apply({
+      node,
+      start,
+      duration,
+      cycleIndex,
+      chordIndex,
+    });
 
-    this._gainNodes.add(gain.envGain);
-    this._gainNodes.add(gain.effectGain);
+    this._gainNodes.add(envGain);
+    this._gainNodes.add(effectGain);
+    node.connect(effectGain).connect(envGain).connect(this._sourceNode);
 
-    return gain;
+    return { gainNodes: [envGain, effectGain], noteEnd };
   }
 
   protected applyDetune(
     node: OscillatorNode | AudioBufferSourceNode,
-    note: NonNullable<Note<unknown>>,
-    cycleIndex: number,
+    start: number,
+    duration: number,
     chordIndex: number
   ) {
-    this._srcEffects.applyDetune(node, note, cycleIndex, chordIndex);
+    const cycleIndex = this._drome.metronome.bar % this._cycles.length;
+    this._detune.apply({ node, start, duration, cycleIndex, chordIndex });
   }
 
   private connectChain(
@@ -118,8 +119,6 @@ abstract class Instrument<T> {
     });
 
     this._isConnected = true;
-
-    return this._sourceNode;
   }
 
   note(...input: (Nullable<T> | Nullable<T>[])[]) {
@@ -139,46 +138,47 @@ abstract class Instrument<T> {
 
   amplitude(a: number | number[] | LFO, ...v: (number | number[])[]) {
     if (a instanceof LFO) {
-      this._gain.note(a.value);
-      this._lfoMap.set("gain", a);
+      this._gain.cycles.note(a.value);
+      this._gain.lfo = a;
     } else {
-      this._gain.note(a, ...v);
+      this._gain.cycles.note(a, ...v);
     }
     return this;
   }
 
   adsr(a: number, d?: number, s?: number, r?: number) {
-    this._srcEffects.gainEnv.att(a);
-    if (typeof d === "number") this._srcEffects.gainEnv.dec(d);
-    if (typeof s === "number") this._srcEffects.gainEnv.sus(s);
-    if (typeof r === "number") this._srcEffects.gainEnv.rel(r);
+    this._gain.env.att(a);
+    if (typeof d === "number") this._gain.env.dec(d);
+    if (typeof s === "number") this._gain.env.sus(s);
+    if (typeof r === "number") this._gain.env.rel(r);
 
     return this;
   }
 
   att(v: number) {
-    this._srcEffects.gainEnv.att(v);
+    this._gain.env.att(v);
     return this;
   }
 
   dec(v: number) {
-    this._srcEffects.gainEnv.dec(v);
+    this._gain.env.dec(v);
     return this;
   }
 
   sus(v: number) {
-    this._srcEffects.gainEnv.sus(v);
+    this._gain.env.sus(v);
     return this;
   }
 
   rel(v: number) {
-    this._srcEffects.gainEnv.rel(v);
+    this._gain.env.rel(v);
     return this;
   }
 
   // TODO: Add env getter to effects
   adsrMode(mode: AdsrMode) {
-    // this._envMap.forEach((env) => env.mode(mode));
+    this._gain.env.mode(mode);
+    this._detune.env?.mode(mode);
     return this;
   }
 
@@ -241,10 +241,16 @@ abstract class Instrument<T> {
     return this;
   }
 
-  // detune(...v: (number | number[])[] | [Envelope] | [LFO]) {
-
   detune(a: number | number[] | LFO | Envelope, ...v: (number | number[])[]) {
-    this._srcEffects.detune(a, ...v);
+    if (a instanceof LFO) {
+      this._detune.cycles.note(a.value);
+      this._detune.lfo = a;
+    } else if (a instanceof Envelope) {
+      this._detune.env = a;
+    } else {
+      this._detune.cycles.note(a, ...v);
+    }
+
     return this;
   }
 
@@ -305,8 +311,9 @@ abstract class Instrument<T> {
 
   beforePlay(barStart: number, barDuration: number) {
     // stop current lfos to make sure that lfo period stays synced with bpm
-    this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
-    this._srcEffects.reset();
+    // this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
+    this._gain.lfo?.stop();
+    this._detune.lfo?.stop();
 
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
@@ -320,14 +327,9 @@ abstract class Instrument<T> {
       };
     });
 
-    const destination = this.connectChain(
-      notes,
-      cycleIndex,
-      barStart,
-      barDuration
-    );
+    this.connectChain(notes, cycleIndex, barStart, barDuration);
 
-    return { notes, cycleIndex, destination };
+    return notes;
   }
 
   stop(when?: number) {
@@ -363,10 +365,10 @@ abstract class Instrument<T> {
       this._gainNodes.clear();
       this._audioNodes.forEach((node) => node.disconnect());
       this._audioNodes.clear();
-      this._lfoMap.forEach((lfo) => {
-        lfo.stop();
-        lfo.disconnect();
-      });
+      // this._lfoMap.forEach((lfo) => {
+      //   lfo.stop();
+      //   lfo.disconnect();
+      // });
       this._isConnected = false;
     }, 100);
   }
@@ -378,17 +380,6 @@ abstract class Instrument<T> {
   get type() {
     return "rate" in this ? "sample" : "synth";
   }
-
-  // get _gainEnv() {
-  //   const gainEnv = this._envMap.get("gain");
-
-  //   if (!gainEnv) {
-  //     const msg = "[DROME] cannot access baseGain env before it has been set";
-  //     throw new Error(msg);
-  //   }
-
-  //   return gainEnv;
-  // }
 }
 
 export default Instrument;

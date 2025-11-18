@@ -17,7 +17,7 @@ d.addSamples(
 );
 
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
-const lfo = d.lfo(0, 1600, 16).type("sine");
+// const lfo = d.lfo(400, 1600, 16).type("sine");
 // const lfo2 = d.lfo(-0.5, 0.5, 16).type("sine");
 // d.synth("triangle")
 //   .note(note)
@@ -26,11 +26,17 @@ const lfo = d.lfo(0, 1600, 16).type("sine");
 //   .crush(4)
 //   .pan(lfo2)
 //   .gain(d.env(0, 1).adsr(0.05, 1, 0.25));
-d.synth("triangle")
-  .note(note)
-  .euclid(4, 4)
-  .adsr(0.1, 0.5, 0.25, 0.1)
-  .detune(lfo);
+
+const lfo = d.lfo(0.15, 1, 16).type("sine");
+d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
+
+// d.synth("triangle")
+//   .note(note)
+//   .euclid(4, 4)
+//   .amp([0.5, 1])
+//   .adsr(0.1, 0.5, 0.25, 0.1);
+
+// .detune(lfo);
 // d.synth("triangle").note(note).euclid(4, 4).lpf([600, 1200]);
 // d.synth("triangle").note(note).gain([0.1, 1]).euclid(4, 4).lpf(600);
 // d.synth("triangle")
