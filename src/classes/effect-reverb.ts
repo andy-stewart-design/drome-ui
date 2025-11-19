@@ -1,6 +1,6 @@
 // TODO: finish logic for loading reverb samples
 
-import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";

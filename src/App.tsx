@@ -16,6 +16,17 @@ d.addSamples(
   "vox"
 );
 
+d.synth("sawtooth")
+  .note([72, 76, 79, 83], [69, 72, 76, 79])
+  .euclid(16, 32)
+  .adsr(0.01, 1, 0.75, 0.1)
+  .lpf(d.env(1000, 2000).adsr(0.01, 0.75, 0.125, 0.1))
+  // .detune(d.lfo(0, 1000, 4))
+  .reverb(0.375);
+d.sample("bd:3").bank("tr909").euclid([3, 5], 8).gain(1);
+d.sample("hh:4").euclid(8, 8).pan(0.875).gain(0.375);
+d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
+
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
 // const lfo = d.lfo(400, 1600, 16).type("sine");
 // const lfo2 = d.lfo(-0.5, 0.5, 16).type("sine");
@@ -27,8 +38,18 @@ d.addSamples(
 //   .pan(lfo2)
 //   .gain(d.env(0, 1).adsr(0.05, 1, 0.25));
 
-const lfo = d.lfo(0.15, 1, 16).type("sine");
-d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
+// const lfo = d.lfo(0.1, 1, 16).type("sine");
+// d.synth("sine")
+//   .note(note)
+//   .euclid(4, 4)
+//   .amp(lfo)
+//   .env(0.025, 0.9, 0.1)
+//   // .lpf(800)
+//   // .crush(4)
+//   .lpf(800)
+//   .distort(100, 1);
+
+// d.synth("sine").note(note).env(0.01, 0.125, 0).delay(0.25, 0.3);
 
 // d.synth("triangle")
 //   .note(note)
@@ -83,14 +104,18 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 
 // --------------------------------------------------
 // ENVELOPE: GAIN
-// d.synth("triangle").note(note).gain(1.25).env(0.25, 0.25, 0.25, 0.1).euclid(4, 4);
+// d.synth("triangle")
+//   .note(note)
+//   .amp(1.25)
+//   .env(0.25, 0.25, 0.25, 0.1)
+//   .euclid(4, 4);
 // -------- OR --------
 // const env = d.env(0, 1.25).adsr(0.25, 0.25, 0.25, 0.1);
 // d.synth("triangle").note(note).gain(env).euclid(4, 4);
 
 // --------------------------------------------------
 // ENVELOPE: PAN
-// const env = d.env(-1, 1).adsr(0.5, 0.5, 0, 0.1);
+// const env = d.env(-0.5, 0.5).adsr(0.5, 0.5, 0, 0);
 // const lfo = d.lfo(0, 1, 8).type("sine");
 
 // d.synth("square")
@@ -101,9 +126,9 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   .rel(0.1)
 //   // .note([note, note + 4, note + 7, note + 11])
 //   .pan(env);
-// .postgain(lfo);
-// .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
-// .pan([-1, 1, -1, 1]);
+// // .postgain(lfo);
+// // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1]);
+// // .pan([-1, 1, -1, 1]);
 
 // d.sample("hh")
 //   .bank("tr909")
@@ -113,7 +138,7 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   // .pan([-1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0, -1, 0, 1, 0])
 //   // .pan([-1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1, -1, 1])
 //   .env(0.05, 0, 1, 0.05)
-//   .postgain(0.75);
+//   .gain(0.75);
 
 // --------------------------------------------------
 // DROME ARRAY: POSTGAIN + FILTER
@@ -121,18 +146,6 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   .lpf([200, 800])
 //   .postgain([1, 0.25, 1, 0.25])
 //   .note([note, note + 4, note + 7, note + 11]);
-
-// --------------------------------------------------
-// ENVELOPE: FILTERS
-// d.synth("sawtooth")
-//   .bpf(400)
-//   .bpenv(1600, 0.25, 0.25, 0.25, 0.1)
-//   .note([note, note + 4, note + 7, note + 11]);
-
-// d.synth("sawtooth", "sine")
-//   .lpf(100)
-//   .lpenv(300, 0, 0.5, 0.375, 0.01)
-//   .note([note, note, note, note]);
 
 // --------------------------------------------------
 // SAMPLES: BASIC
@@ -147,8 +160,8 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   .bank("tr909")
 //   .euclid(4, 4)
 //   .delay(0.125, 0.25, 0.25)
-//   .reverb(0.75);
-// d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.8, "hey:1", "tr808");
+//   .reverb(0.1);
+// d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.8, "hey:1", "vox");
 // d.synth("triangle")
 //   .note([note, note + 4])
 //   .euclid(3, 8)
@@ -157,7 +170,7 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 // d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
 // d.sample("bd:3").euclid(4, 4);
 // d.sample("hh").bank("tr808").euclid(4, 8, 1);
-// d.sample("cp").bank("tr808").euclid(2, 4, 1).postgain(0.75);
+// d.sample("cp").bank("tr808").euclid(2, 4, 1).gain(0.75);
 
 // --------------------------------------------------
 // // SAMPLES: START POINT
@@ -167,7 +180,16 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   .begin(0, 0.45)
 //   .lpf(200)
 //   .rel(0.1)
-//   .lpenv(1000, 0.1, 0.25, 0.25)
+//   .lpf(d.env(200, 1000).adsr(0.1, 0.25, 0.25))
+//   .cut();
+
+// d.sample("bass")
+//   .bank("sonicpi")
+//   .fit(2)
+//   .chop(4, [2, 3], [1, 0])
+//   // .chop(4)
+//   // .rev()
+//   // .lpf(d.env(200, 1000).adsr(0.1, 0.25, 0.25))
 //   .cut();
 
 // --------------------------------------------------
@@ -184,10 +206,11 @@ d.synth("triangle").note(note).euclid(4, 4).amp(lfo).env(0.001, 0.9, 0.1);
 //   .bank("loops")
 //   .fit(2)
 //   .chop(4, [2, 3], [1, 0])
+//   // .chop(4)
 //   // .rev()
 //   .cut();
-// .adsrMode("clip");
-// .adsr(0.1, 0, 1, 0.1);
+// // .adsrMode("clip");
+// // .adsr(0.1, 0, 1, 0.1);
 
 function App() {
   return (

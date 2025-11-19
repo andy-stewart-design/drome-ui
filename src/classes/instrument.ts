@@ -1,12 +1,12 @@
 // TODO: Revisit instrument cleanup method and generally tidy up
 
-import AutomatableEffect from "./automatable-effect";
+import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
 import DistortionEffect from "./effect-distortion";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
-import DromeFilter from "./drome-filter";
+import DromeFilter from "./effect-filter";
 import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
@@ -287,7 +287,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  delay(delayTime = 0.25, feedback = 0.1, mix = 0.2) {
+  delay(delayTime?: number, feedback?: number, mix?: number) {
     const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
     this._signalChain.add(effect);
     return this;

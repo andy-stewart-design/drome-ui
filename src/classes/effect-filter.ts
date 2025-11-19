@@ -1,4 +1,4 @@
-import AutomatableEffect from "./automatable-effect";
+import AutomatableEffect from "./effect-automatable";
 import Envelope from "./envelope";
 import LFO from "./lfo";
 import type { FilterType } from "../types";

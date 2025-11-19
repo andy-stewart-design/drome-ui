@@ -12,7 +12,7 @@ interface SourceEffectApplyArgs {
   chordIndex: number;
 }
 
-abstract class SrcEffect {
+abstract class SourceEffect {
   protected _drome: Drome;
   protected abstract _cycles: DromeArray<number>;
   protected abstract _env: Envelope | undefined;
@@ -51,7 +51,7 @@ interface ApplyGainReturn {
   noteEnd: number;
 }
 
-class GainSourceEffect extends SrcEffect {
+class GainSourceEffect extends SourceEffect {
   protected _cycles: DromeArray<number>;
   protected _env: Envelope;
   protected _lfo: LFO | undefined;
@@ -90,7 +90,7 @@ class GainSourceEffect extends SrcEffect {
   }
 }
 
-class DetuneSourceEffect extends SrcEffect {
+class DetuneSourceEffect extends SourceEffect {
   protected _cycles: DromeArray<number>;
   protected _env: Envelope | undefined;
   protected _lfo: LFO | undefined;

@@ -6,8 +6,8 @@ import { isEnvTuple, isLfoTuple, isNullish } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type { Note } from "../types";
 
-abstract class AutomatableEffect<AN extends AudioNode> extends DromeAudioNode {
-  protected abstract _input: AN;
+abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
+  protected abstract _input: T;
   protected abstract _target: AudioParam;
   protected _defaultValue: number;
   protected _cycles: DromeArray<number>;
@@ -49,8 +49,6 @@ abstract class AutomatableEffect<AN extends AudioNode> extends DromeAudioNode {
       }
     } else {
       const steps = this._cycles.at(cycleIndex);
-      console.log(steps);
-
       applySteppedRamp({ target: this._target, startTime, duration, steps });
     }
   }
