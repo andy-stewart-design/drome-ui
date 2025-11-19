@@ -16,16 +16,16 @@ d.addSamples(
   "vox"
 );
 
-d.synth("sawtooth")
-  .note([72, 76, 79, 83], [69, 72, 76, 79])
-  .euclid(16, 32)
-  .adsr(0.01, 1, 0.75, 0.1)
-  .lpf(d.env(1000, 2000).adsr(0.01, 0.75, 0.125, 0.1))
-  // .detune(d.lfo(0, 1000, 4))
-  .reverb(0.375);
-d.sample("bd:3").bank("tr909").euclid([3, 5], 8).gain(1);
-d.sample("hh:4").euclid(8, 8).pan(0.875).gain(0.375);
-d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
+// d.synth("sawtooth")
+//   .note([72, 76, 79, 83], [69, 72, 76, 79])
+//   .euclid(16, 32)
+//   .adsr(0.01, 1, 0.75, 0.1)
+//   .lpf(d.env(1000, 2000).adsr(0.01, 0.75, 0.125, 0.1))
+//   // .detune(d.lfo(0, 1000, 4))
+//   .reverb(0.375);
+// d.sample("bd:3").bank("tr909").euclid([3, 5], 8).gain(1);
+// d.sample("hh:4").euclid(8, 8).pan(0.875).gain(0.375);
+// d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
 
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
 // const lfo = d.lfo(400, 1600, 16).type("sine");
@@ -49,7 +49,13 @@ d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
 //   .lpf(800)
 //   .distort(100, 1);
 
-// d.synth("sine").note(note).env(0.01, 0.125, 0).delay(0.25, 0.3);
+d.synth("sawtooth")
+  .note(note, note)
+  .env(0.01, 0.125, 0)
+  .lpf(400)
+  .delay(0.125, 0.5);
+
+d.sample("hh").euclid(4, 4).gain(0.25);
 
 // d.synth("triangle")
 //   .note(note)

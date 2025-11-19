@@ -12,10 +12,10 @@ class DelayEffect extends DromeEffect {
 
   constructor(
     drome: Drome,
-    { delayTime = 0.25, feedback = 0.1, mix = 1 }: DelayEffectOptions = {}
+    { delayTime = 0.25, feedback = 0.1 }: DelayEffectOptions = {}
   ) {
-    super(drome, { mix });
-    this.delay = new DelayNode(drome.ctx, { delayTime });
+    super(drome, { mix: feedback });
+    this.delay = new DelayNode(drome.ctx, { delayTime: delayTime * 2 });
     this.feedback = new GainNode(drome.ctx, { gain: feedback });
 
     // Dry signal passes through

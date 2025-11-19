@@ -289,9 +289,27 @@ abstract class Instrument<T> {
 
   delay(delayTime?: number, feedback?: number, mix?: number) {
     const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
+
     this._signalChain.add(effect);
+
     return this;
   }
+
+  // delay(...delayTime: (number | number[])[] | [LFO] | [Envelope]) {
+  //   const effect = new DelayEffect(this.ctx, { delayTime, feedback: 0.5 });
+
+  //   this._signalChain.add(effect);
+
+  //   return this;
+  // }
+
+  // gain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
+  //   const effect = new GainEffect(this.ctx, { gain });
+
+  //   this._signalChain.add(effect);
+
+  //   return this;
+  // }
 
   distort(amount = 50, mix = 0.5) {
     const effect = new DistortionEffect(this._drome, { amount, mix });
