@@ -1,4 +1,4 @@
-import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
 import type Drome from "./drome";
 
 interface BitcrusherEffectOptions extends DromeEffectOptions {

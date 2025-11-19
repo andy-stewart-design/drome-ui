@@ -1,3 +1,4 @@
+import DromeAudioNode from "./drome-audio-node";
 import type Drome from "./drome";
 
 interface DromeEffectOptions {
@@ -5,8 +6,8 @@ interface DromeEffectOptions {
   variableDry?: boolean;
 }
 
-abstract class DromeEffect {
-  readonly input: GainNode;
+abstract class DromeEffect extends DromeAudioNode {
+  protected _input: GainNode;
   protected _wet: GainNode;
   protected _dry: GainNode;
 
@@ -14,8 +15,9 @@ abstract class DromeEffect {
     drome: Drome,
     { mix = 0.1, variableDry = false }: DromeEffectOptions = {}
   ) {
+    super();
     const dryGain = variableDry ? 1 - mix : 1;
-    this.input = new GainNode(drome.ctx);
+    this._input = new GainNode(drome.ctx);
     this._wet = new GainNode(drome.ctx, { gain: mix });
     this._dry = new GainNode(drome.ctx, { gain: dryGain });
   }
@@ -34,8 +36,8 @@ abstract class DromeEffect {
     this._wet.gain.value = v;
   }
 
-  get inputNode() {
-    return this.input;
+  get input() {
+    return this._input;
   }
 }
 

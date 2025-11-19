@@ -89,10 +89,7 @@ export default class Sample extends Instrument<number> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { notes, cycleIndex, destination } = this.beforePlay(
-      barStart,
-      barDuration
-    );
+    const notes = this.beforePlay(barStart, barDuration);
 
     this._sampleIds.forEach((sampleId) => {
       notes.forEach(async (note, noteIndex) => {
@@ -113,24 +110,26 @@ export default class Sample extends Instrument<number> {
           playbackRate: playbackRate,
           loop: this._loop,
         });
-        this.applyDetune(src, note, cycleIndex, noteIndex);
+        this.applyDetune(src, note.start, note.duration, noteIndex);
         this._audioNodes.add(src);
 
-        const { effectGain, envGain } = this.createGain(
+        const { gainNodes } = this.createGain(
+          src,
           note.start,
           this._cut ? note.duration : chopDuration,
           noteIndex
         );
 
-        src.connect(envGain).connect(effectGain).connect(destination);
         src.start(note.start, chopStartTime);
         // src.stop(noteStart + endTime + 0.1);
 
         const cleanup = () => {
           src.disconnect();
           this._audioNodes.delete(src);
-          effectGain.disconnect();
-          this._gainNodes.delete(effectGain);
+          gainNodes.forEach((node) => {
+            node.disconnect();
+            this._gainNodes.delete(node);
+          });
           src.removeEventListener("ended", cleanup);
         };
 

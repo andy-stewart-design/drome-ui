@@ -1,4 +1,4 @@
-import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
 import type Drome from "./drome";
 
 interface DelayEffectOptions extends DromeEffectOptions {
@@ -12,7 +12,7 @@ class DelayEffect extends DromeEffect {
 
   constructor(
     drome: Drome,
-    { delayTime = 0.25, feedback = 0.1, mix = 0.2 }: DelayEffectOptions = {}
+    { delayTime = 0.25, feedback = 0.1, mix = 1 }: DelayEffectOptions = {}
   ) {
     super(drome, { mix });
     this.delay = new DelayNode(drome.ctx, { delayTime });

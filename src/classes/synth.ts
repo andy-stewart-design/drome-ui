@@ -15,10 +15,7 @@ export default class Synth extends Instrument<number | number[]> {
   }
 
   play(barStart: number, barDuration: number) {
-    const { notes, cycleIndex, destination } = this.beforePlay(
-      barStart,
-      barDuration
-    );
+    const notes = this.beforePlay(barStart, barDuration);
 
     this._types.forEach((type) => {
       notes.forEach((note, chordIndex) => {
@@ -29,26 +26,26 @@ export default class Synth extends Instrument<number | number[]> {
             frequency: midiToFrequency(midiNote),
             type,
           });
-          this.applyDetune(osc, note, cycleIndex, chordIndex);
           this._audioNodes.add(osc);
 
-          const { effectGain, noteEnd, envGain } = this.createGain(
+          this.applyDetune(osc, note.start, note.duration, chordIndex);
+          const { gainNodes, noteEnd } = this.createGain(
+            osc,
             note.start,
             note.duration,
             chordIndex
           );
 
-          osc.connect(effectGain).connect(envGain).connect(destination);
           osc.start(note.start);
           osc.stop(note.start + noteEnd);
 
           const cleanup = () => {
             osc.disconnect();
-            effectGain.disconnect();
-            envGain.disconnect();
             this._audioNodes.delete(osc);
-            this._gainNodes.delete(effectGain);
-            this._gainNodes.delete(envGain);
+            gainNodes.forEach((node) => {
+              node.disconnect();
+              this._gainNodes.delete(node);
+            });
             osc.removeEventListener("ended", cleanup);
           };
 

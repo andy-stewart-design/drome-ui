@@ -1,4 +1,4 @@
-import DromeEffect, { type DromeEffectOptions } from "./drome-effect";
+import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
 import type Drome from "./drome";
 
 interface DistortionEffectOptions extends DromeEffectOptions {
@@ -13,7 +13,7 @@ class DistortionEffect extends DromeEffect {
     drome: Drome,
     { amount = 50, oversample = "4x", mix = 0.5 }: DistortionEffectOptions = {}
   ) {
-    super(drome, { mix });
+    super(drome, { mix, variableDry: false });
     this.waveShaper = new WaveShaperNode(drome.ctx, { oversample });
     this.setAmount(amount);
 
