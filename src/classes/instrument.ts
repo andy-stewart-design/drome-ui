@@ -2,7 +2,7 @@
 
 import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
-import DelayEffect from "./effect-delay";
+import DelayEffect from "./effect-delay-2";
 import DistortionEffect from "./effect-distortion";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
@@ -201,7 +201,7 @@ abstract class Instrument<T> {
   bpq(v: number) {
     Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "bandpass") {
-        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+        e.effect.Q.setValueAtTime(v, this.ctx.currentTime);
       }
     });
     return this;
@@ -218,7 +218,7 @@ abstract class Instrument<T> {
   hpq(v: number) {
     Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "highpass") {
-        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+        e.effect.Q.setValueAtTime(v, this.ctx.currentTime);
       }
     });
     return this;
@@ -235,7 +235,7 @@ abstract class Instrument<T> {
   lpq(v: number) {
     Array.from(this._signalChain).forEach((e) => {
       if (e instanceof DromeFilter && e.type === "lowpass") {
-        e.input.Q.setValueAtTime(v, this.ctx.currentTime);
+        e.effect.Q.setValueAtTime(v, this.ctx.currentTime);
       }
     });
     return this;
@@ -287,21 +287,24 @@ abstract class Instrument<T> {
     return this;
   }
 
-  delay(delayTime?: number, feedback?: number, mix?: number) {
-    const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
-
-    this._signalChain.add(effect);
-
-    return this;
-  }
-
-  // delay(...delayTime: (number | number[])[] | [LFO] | [Envelope]) {
-  //   const effect = new DelayEffect(this.ctx, { delayTime, feedback: 0.5 });
+  // delay(delayTime?: number, feedback?: number, mix?: number) {
+  //   const effect = new DelayEffect(this._drome, { delayTime, feedback, mix });
 
   //   this._signalChain.add(effect);
 
   //   return this;
   // }
+
+  delay(
+    delayTime: number,
+    ...feedback: (number | number[])[] | [LFO] | [Envelope]
+  ) {
+    const effect = new DelayEffect(this._drome, { delayTime, feedback });
+
+    this._signalChain.add(effect);
+
+    return this;
+  }
 
   // gain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
   //   const effect = new GainEffect(this.ctx, { gain });

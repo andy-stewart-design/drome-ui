@@ -53,7 +53,7 @@ d.synth("sawtooth")
   .note(note, note)
   .env(0.01, 0.125, 0)
   .lpf(400)
-  .delay(0.125, 0.5);
+  .delay(0.125, d.lfo(0, 1, 1));
 
 d.sample("hh").euclid(4, 4).gain(0.25);
 

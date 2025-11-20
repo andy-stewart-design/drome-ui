@@ -9,18 +9,20 @@ interface DromeFilterOptions {
 }
 
 class DromeFilter extends AutomatableEffect<BiquadFilterNode> {
-  protected _input: BiquadFilterNode;
+  protected _input: GainNode;
+  protected _effect: BiquadFilterNode;
   protected _target: AudioParam;
 
   constructor(ctx: AudioContext, opts: DromeFilterOptions) {
     const { type, frequency } = opts;
     super(frequency);
 
-    this._input = new BiquadFilterNode(ctx, {
+    this._input = new GainNode(ctx);
+    this._effect = new BiquadFilterNode(ctx, {
       type,
       frequency: this._defaultValue,
     });
-    this._target = this._input.frequency;
+    this._target = this._effect.frequency;
   }
 
   createEnvelope(max: number, adsr: number[]) {
@@ -32,7 +34,7 @@ class DromeFilter extends AutomatableEffect<BiquadFilterNode> {
   }
 
   get type() {
-    return this._input.type;
+    return this._effect.type;
   }
 }
 

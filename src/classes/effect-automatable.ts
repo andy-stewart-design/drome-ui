@@ -7,8 +7,9 @@ import { applySteppedRamp } from "../utils/stepped-ramp";
 import type { Note } from "../types";
 
 abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
-  protected abstract _input: T;
-  protected abstract _target: AudioParam;
+  protected abstract _input: GainNode;
+  protected abstract _effect: T;
+  protected abstract _target: AudioParam | undefined;
   protected _defaultValue: number;
   protected _cycles: DromeArray<number>;
   protected _lfo: LFO | undefined;
@@ -37,6 +38,8 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
     startTime: number,
     duration: number
   ) {
+    if (!this._target) return;
+
     if (this._lfo && !this._lfo.paused) this._lfo.stop(startTime);
 
     if (this._lfo) {
@@ -54,11 +57,15 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
   }
 
   connect(dest: AudioNode) {
-    this._input.connect(dest);
+    this._input.connect(this._effect).connect(dest);
   }
 
   disconnect() {
     this._input.disconnect();
+  }
+
+  get effect() {
+    return this._effect;
   }
 
   get env() {
