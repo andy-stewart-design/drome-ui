@@ -1,14 +1,10 @@
-// TODO: revert to using delayTime as automatable
-// TODO: reverse order of feedback and delayTime args
-
+import { isNumber } from "../utils/validators";
 import type Drome from "./drome";
 import AutomatableEffect from "./effect-automatable";
-import Envelope from "./envelope";
-import LFO from "./lfo";
 
 interface DelayEffectOptions {
-  delayTime: number;
-  feedback?: (number | number[])[] | [LFO] | [Envelope];
+  delayTime: (number | number[])[];
+  feedback: number;
 }
 
 class DelayEffect extends AutomatableEffect<DelayNode> {
@@ -19,25 +15,16 @@ class DelayEffect extends AutomatableEffect<DelayNode> {
   private _wet: GainNode;
   private _feedback: GainNode;
 
-  constructor(
-    drome: Drome,
-    { delayTime, feedback = [0.1] }: DelayEffectOptions
-  ) {
-    super(feedback);
+  constructor(drome: Drome, { delayTime: d, feedback }: DelayEffectOptions) {
+    super(d.map((x) => (isNumber(x) ? x * 2 : x.map((y) => y * 2))));
     this._input = new GainNode(drome.ctx);
     this._effect = new DelayNode(drome.ctx, {
-      delayTime: delayTime * 2,
+      delayTime: this._defaultValue,
     });
     this._dry = new GainNode(drome.ctx);
-    this._wet = new GainNode(drome.ctx, { gain: this._defaultValue });
-    this._feedback = new GainNode(drome.ctx, { gain: this._defaultValue });
-    this._target = this._feedback.gain;
-
-    // Dry signal passes through
-    this.input.connect(this._dry);
-    // Wet signal with feedback
-    this.input.connect(this._effect).connect(this._wet);
-    this._effect.connect(this._feedback).connect(this._effect);
+    this._wet = new GainNode(drome.ctx, { gain: feedback });
+    this._feedback = new GainNode(drome.ctx, { gain: feedback });
+    this._target = this._effect.delayTime;
   }
 
   connect(dest: AudioNode) {
