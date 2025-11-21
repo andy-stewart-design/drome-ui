@@ -11,7 +11,7 @@ import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
 import LFO from "./lfo";
-import ReverbEffect from "./effect-reverb";
+import ReverbEffect from "./effect-reverb-2";
 import { DetuneSourceEffect, GainSourceEffect } from "./effect-source";
 import { isNullish } from "../utils/validators";
 import type Drome from "./drome";
@@ -29,6 +29,13 @@ interface InstrumentOptions<T> {
   baseGain?: number;
   adsr?: AdsrEnvelope;
 }
+
+type BadIdea = number | (number | number[])[] | [LFO] | [Envelope];
+type Cycle = (number | number[])[] | [LFO] | [Envelope];
+type CycleGetter = () => Cycle;
+// type GoodIdea = number | LFO | Envelope | string;
+type GoodIdea = number | LFO | Envelope | string;
+// type Cycle2 = number | (number | number[])[] | [LFO] | [Envelope];
 
 abstract class Instrument<T> {
   protected _drome: Drome;
@@ -101,7 +108,6 @@ abstract class Instrument<T> {
 
   private connectChain(
     notes: Note<T>[],
-    cycleIndex: number,
     barStart: number,
     barDuration: number
   ) {
@@ -109,7 +115,7 @@ abstract class Instrument<T> {
 
     chain.forEach((node, i) => {
       if (node instanceof AutomatableEffect)
-        node.apply(notes, cycleIndex, barStart, barDuration);
+        node.apply(notes, this._drome.metronome.bar, barStart, barDuration);
 
       if (this._isConnected) return;
 
@@ -265,14 +271,25 @@ abstract class Instrument<T> {
   // b either represents decay/room size or a url/sample name
   // c either represents the lpf start value or a sample bank name
   // d is the lpf end value
-  reverb(a?: number, b?: number, c?: number, d?: number): this;
-  reverb(a?: number, b?: string, c?: string): this;
-  reverb(mix = 0.2, b: unknown = 1, c: unknown = 1600, d?: number) {
+  reverb(a: GoodIdea, b?: number, c?: number, d?: number): this;
+  reverb(a: GoodIdea, b?: string, c?: string): this;
+  reverb(mix: GoodIdea, b: unknown = 1, c: unknown = 1600, d?: number) {
     let effect: ReverbEffect;
+    // const m = typeof mix === "number" ? [mix] : mix;
+    const foo =
+      typeof mix === "string" ? (JSON.parse(`[${mix}]`) as number[]) : mix;
+    const m: Cycle =
+      foo instanceof Envelope
+        ? [foo]
+        : foo instanceof LFO
+        ? [foo]
+        : Array.isArray(foo)
+        ? foo
+        : [foo];
 
     if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
-      const opts = { mix, decay: b, lpfStart: c, lpfEnd };
+      const opts = { mix: m, decay: b, lpfStart: c, lpfEnd };
       effect = new ReverbEffect(this._drome, opts);
     } else {
       const name = typeof b === "string" ? b : "echo";
@@ -280,7 +297,7 @@ abstract class Instrument<T> {
       const src = name.startsWith("https")
         ? ({ registered: false, url: name } as const)
         : ({ registered: true, name, bank } as const);
-      effect = new ReverbEffect(this._drome, { mix, src });
+      effect = new ReverbEffect(this._drome, { mix: m, src });
     }
 
     this._signalChain.add(effect);
@@ -329,7 +346,7 @@ abstract class Instrument<T> {
       };
     });
 
-    this.connectChain(notes, cycleIndex, barStart, barDuration);
+    this.connectChain(notes, barStart, barDuration);
 
     return notes;
   }
