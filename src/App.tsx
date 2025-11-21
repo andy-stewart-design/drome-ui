@@ -49,15 +49,15 @@ d.addSamples(
 //   .lpf(800)
 //   .distort(100, 1);
 
-// d.synth("sawtooth")
-//   .note(note, note)
-//   .env(0.01, 0.125, 0)
-//   .lpf(400)
-//   .delay(0.3, 0.25, 0.125);
+d.synth("sawtooth")
+  .note(note, note)
+  .env(0.01, 0.125, 0)
+  .lpf(400)
+  .delay("0.25, 0.125", 0.3);
 
 // d.sample("hh").euclid(4, 4).gain(0.25);
 
-d.sample("bd").reverb("0.5, 0.1");
+// d.sample("bd").reverb("0.5, 0.1");
 
 // d.synth("triangle")
 //   .note(note)

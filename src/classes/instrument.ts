@@ -272,21 +272,11 @@ abstract class Instrument<T> {
   reverb(a: CycleInput, b?: string, c?: string): this;
   reverb(mix: CycleInput, b: unknown = 1, c: unknown = 1600, d?: number) {
     let effect: ReverbEffect;
-    // const m = typeof mix === "number" ? [mix] : mix;
-    const foo = typeof mix === "string" ? parsePattern(mix) : mix;
-    const m: Cycle =
-      foo instanceof Envelope
-        ? [foo]
-        : foo instanceof LFO
-        ? [foo]
-        : Array.isArray(foo)
-        ? foo
-        : [foo];
-    console.log({ foo, m });
+    const parsedMix = parseCycleInput(mix);
 
     if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
-      const opts = { mix: m, decay: b, lpfStart: c, lpfEnd };
+      const opts = { mix: parsedMix, decay: b, lpfStart: c, lpfEnd };
       effect = new ReverbEffect(this._drome, opts);
     } else {
       const name = typeof b === "string" ? b : "echo";
@@ -294,14 +284,15 @@ abstract class Instrument<T> {
       const src = name.startsWith("https")
         ? ({ registered: false, url: name } as const)
         : ({ registered: true, name, bank } as const);
-      effect = new ReverbEffect(this._drome, { mix: m, src });
+      effect = new ReverbEffect(this._drome, { mix: parsedMix, src });
     }
 
     this._signalChain.add(effect);
     return this;
   }
 
-  delay(feedback: number, ...delayTime: (number | number[])[]) {
+  delay(dt: number | string, feedback: number) {
+    const delayTime = parsePattern(dt);
     const effect = new DelayEffect(this._drome, { delayTime, feedback });
 
     this._signalChain.add(effect);
@@ -401,7 +392,18 @@ abstract class Instrument<T> {
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
 
-function parsePattern(input: string) {
+function parsePattern(input: number | string): Pattern {
+  if (typeof input === "string") return parsePatternString(input);
+  return [input];
+}
+
+function parseCycleInput(input: CycleInput): Cycle {
+  if (input instanceof Envelope) return [input];
+  else if (input instanceof LFO) return [input];
+  else return parsePattern(input);
+}
+
+function parsePatternString(input: string) {
   const err = `[DROME] could not parse pattern string: ${input}`;
   try {
     const parsed = JSON.parse(`[${input}]`);
