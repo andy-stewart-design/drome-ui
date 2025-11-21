@@ -30,12 +30,9 @@ interface InstrumentOptions<T> {
   adsr?: AdsrEnvelope;
 }
 
-type BadIdea = number | (number | number[])[] | [LFO] | [Envelope];
-type Cycle = (number | number[])[] | [LFO] | [Envelope];
-type CycleGetter = () => Cycle;
-// type GoodIdea = number | LFO | Envelope | string;
-type GoodIdea = number | LFO | Envelope | string;
-// type Cycle2 = number | (number | number[])[] | [LFO] | [Envelope];
+type Pattern = (number | number[])[];
+type Cycle = Pattern | [LFO] | [Envelope];
+type CycleInput = number | LFO | Envelope | string;
 
 abstract class Instrument<T> {
   protected _drome: Drome;
@@ -271,13 +268,12 @@ abstract class Instrument<T> {
   // b either represents decay/room size or a url/sample name
   // c either represents the lpf start value or a sample bank name
   // d is the lpf end value
-  reverb(a: GoodIdea, b?: number, c?: number, d?: number): this;
-  reverb(a: GoodIdea, b?: string, c?: string): this;
-  reverb(mix: GoodIdea, b: unknown = 1, c: unknown = 1600, d?: number) {
+  reverb(a: CycleInput, b?: number, c?: number, d?: number): this;
+  reverb(a: CycleInput, b?: string, c?: string): this;
+  reverb(mix: CycleInput, b: unknown = 1, c: unknown = 1600, d?: number) {
     let effect: ReverbEffect;
     // const m = typeof mix === "number" ? [mix] : mix;
-    const foo =
-      typeof mix === "string" ? (JSON.parse(`[${mix}]`) as number[]) : mix;
+    const foo = typeof mix === "string" ? parsePattern(mix) : mix;
     const m: Cycle =
       foo instanceof Envelope
         ? [foo]
@@ -286,6 +282,7 @@ abstract class Instrument<T> {
         : Array.isArray(foo)
         ? foo
         : [foo];
+    console.log({ foo, m });
 
     if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
@@ -403,3 +400,26 @@ abstract class Instrument<T> {
 
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
+
+function parsePattern(input: string) {
+  const err = `[DROME] could not parse pattern string: ${input}`;
+  try {
+    const parsed = JSON.parse(`[${input}]`);
+    if (!isPattern(parsed)) throw new Error(err);
+    return parsed;
+  } catch {
+    console.warn(err);
+    return [];
+  }
+}
+
+function isPattern(input: unknown): input is Pattern {
+  return (
+    Array.isArray(input) &&
+    input.reduce<boolean>((_, x) => {
+      if (typeof x === "number") return true;
+      else if (Array.isArray(x)) return x.every((x) => typeof x === "number");
+      return false;
+    }, true)
+  );
+}

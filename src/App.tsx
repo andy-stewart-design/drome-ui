@@ -57,7 +57,7 @@ d.addSamples(
 
 // d.sample("hh").euclid(4, 4).gain(0.25);
 
-d.sample("bd").euclid(4, 4).reverb("0.5, 0.1");
+d.sample("bd").reverb("0.5, 0.1");
 
 // d.synth("triangle")
 //   .note(note)

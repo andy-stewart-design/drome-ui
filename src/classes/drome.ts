@@ -11,9 +11,6 @@ import { bufferId } from "../utils/cache-id";
 const BASE_GAIN = 0.8;
 const NUM_CHANNELS = 8;
 
-type Cycle = (number | number[])[] | [LFO] | [Envelope];
-type CycleGetter = () => Cycle;
-
 class Drome {
   readonly clock: AudioClock;
   readonly instruments: (Synth | Sample)[] = [];
@@ -21,9 +18,6 @@ class Drome {
   readonly bufferCache: Map<string, AudioBuffer[]> = new Map();
   readonly reverbCache: Map<string, AudioBuffer> = new Map();
   readonly userSamples: Map<string, Map<string, string[]>> = new Map();
-
-  // Method Aliases
-  c: (...cycles: Cycle) => CycleGetter;
 
   static async init(bpm?: number) {
     const drome = new Drome(bpm);
@@ -39,8 +33,6 @@ class Drome {
       return gain;
     });
     this.clock.on("bar", this.handleTick.bind(this));
-
-    this.c = this.cycle.bind(this);
   }
 
   private handleTick() {
@@ -145,10 +137,6 @@ class Drome {
     const depth = maxValue - value;
     const bpm = this.beatsPerMin;
     return new LFO(this.ctx, { value, depth, speed, bpm });
-  }
-
-  cycle(...cycles: (number | number[])[] | [LFO] | [Envelope]) {
-    return () => cycles;
   }
 
   get ctx() {
