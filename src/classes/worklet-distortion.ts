@@ -8,7 +8,6 @@ interface DistortionOptions extends AudioWorkletNodeOptions {
 
 type DistortionAlgorithm = keyof typeof algos;
 type DistortionFunction = (typeof algos)[DistortionAlgorithm];
-const BLOCKSIZE = 128;
 
 const clamp = (num: number, min: number, max: number) =>
   Math.min(Math.max(num, min), max);
@@ -37,15 +36,23 @@ class DistortionProcessor extends AudioWorkletProcessor {
     outputs: Float32Array[][],
     parameters: Record<string, Float32Array>
   ) {
-    const input = inputs[0];
-    const output = outputs[0];
+    const sourceLimit = Math.min(inputs.length, outputs.length);
 
-    for (let n = 0; n < BLOCKSIZE; n++) {
-      const postgain = clamp(pv(parameters.postgain, n), 0.001, 1);
-      const shape = Math.expm1(pv(parameters.distortion, n));
-      for (let ch = 0; ch < input.length; ch++) {
-        const x = input[ch][n];
-        output[ch][n] = postgain * this.algorithm(x, shape);
+    for (let inputNum = 0; inputNum < sourceLimit; inputNum++) {
+      const input = inputs[inputNum];
+      const output = outputs[inputNum];
+      const chanCount = Math.min(input.length, output.length);
+
+      for (let chanNum = 0; chanNum < chanCount; chanNum++) {
+        const postArr = parameters.postgain;
+        const distArr = parameters.distortion;
+
+        input[chanNum].forEach((sample, i) => {
+          const postgain = clamp(pv(postArr, i), 0.001, 1);
+          const shape = Math.expm1(pv(distArr, i));
+
+          output[chanNum][i] = postgain * this.algorithm(sample, shape);
+        });
       }
     }
 

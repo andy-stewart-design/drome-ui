@@ -3,7 +3,6 @@
 import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay-2";
-import DistortionEffect from "./effect-distortion";
 import DistortionEffect2 from "./effect-distortion-2";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
@@ -305,13 +304,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  distort(amount = 50, mix = 0.5) {
-    const effect = new DistortionEffect(this._drome, { amount, mix });
-    this._signalChain.add(effect);
-    return this;
-  }
-
-  distort2(
+  distort(
     amount: number | string | LFO | Envelope,
     postgain?: number,
     type?: DistortionAlgorithm

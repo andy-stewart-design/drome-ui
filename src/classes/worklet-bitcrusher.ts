@@ -22,6 +22,7 @@ class BitcrushProcessor extends AudioWorkletProcessor {
   ) {
     const rateParam = parameters.rateReduction;
     const bitsParam = parameters.bitDepth;
+
     const sourceLimit = Math.min(inputs.length, outputs.length);
 
     for (let inputNum = 0; inputNum < sourceLimit; inputNum++) {
@@ -30,7 +31,13 @@ class BitcrushProcessor extends AudioWorkletProcessor {
       const chanCount = Math.min(input.length, output.length);
 
       for (let chanNum = 0; chanNum < chanCount; chanNum++) {
-        input[chanNum].forEach((sample, i) => {
+        const inChan = input[chanNum];
+        const outChan = output[chanNum];
+        const sampleCount = inChan.length;
+
+        for (let i = 0; i < sampleCount; i++) {
+          const sample = inChan[i];
+
           const currentRate =
             rateParam.length > 1 ? rateParam[i] : rateParam[0];
           const currentBits =
@@ -44,8 +51,8 @@ class BitcrushProcessor extends AudioWorkletProcessor {
             this.lastSample = step * Math.floor(sample / step + 0.5);
           }
 
-          output[chanNum][i] = this.lastSample;
-        });
+          outChan[i] = this.lastSample;
+        }
       }
     }
 
