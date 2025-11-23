@@ -4,6 +4,7 @@ import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay-2";
 import DistortionEffect from "./effect-distortion";
+import DistortionEffect2 from "./effect-distortion-2";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./effect-filter";
@@ -22,6 +23,10 @@ import type {
   Note,
   Nullable,
 } from "../types";
+
+// TODO: centralize type defs
+import * as algos from "../utils/distortion-algorithms";
+type DistortionAlgorithm = keyof typeof algos;
 
 interface InstrumentOptions<T> {
   destination: AudioNode;
@@ -302,6 +307,21 @@ abstract class Instrument<T> {
 
   distort(amount = 50, mix = 0.5) {
     const effect = new DistortionEffect(this._drome, { amount, mix });
+    this._signalChain.add(effect);
+    return this;
+  }
+
+  distort2(
+    amount: number | string | LFO | Envelope,
+    postgain?: number,
+    type?: DistortionAlgorithm
+  ) {
+    const distortion = parseCycleInput(amount);
+    const effect = new DistortionEffect2(this.ctx, {
+      distortion,
+      postgain,
+      type,
+    });
     this._signalChain.add(effect);
     return this;
   }

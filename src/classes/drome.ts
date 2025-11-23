@@ -4,7 +4,7 @@ import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
 import bitcrusherUrl from "./worklet-bitcrusher?url";
-import distortionUrl from "./worklet-bitcrusher?url";
+import distortionUrl from "./worklet-distortion?url";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
 import { bufferId } from "../utils/cache-id";

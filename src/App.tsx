@@ -49,7 +49,7 @@ d.addSamples(
 //   .lpf(800)
 //   .distort(100, 1);
 
-// d.synth("sine").note(note, note).env(0.01, 0.5, 0).distort(500);
+d.synth("sine").note(note, note).env(0.01, 0.5, 0).distort2(4);
 // .delay("0.25, 0.125", 0.3);
 
 // d.sample("hh").euclid(4, 4).gain(0.25);
@@ -172,7 +172,8 @@ d.addSamples(
 //   .euclid(3, 8)
 //   .env(0.01, 0, 1, 0.5)
 //   .crush(4);
-d.sample("hey:2").bank("vox").euclid(2, 4).crush(d.lfo(2, 8, 16));
+// d.sample("hey:2").bank("vox").euclid(2, 4).crush(4);
+// d.sample("hey:2").bank("vox").euclid(2, 4).crush(d.lfo(3, 8, 16));
 // d.sample("bd:3").euclid(4, 4);
 // d.sample("hh").bank("tr808").euclid(4, 8, 1);
 // d.sample("cp").bank("tr808").euclid(2, 4, 1).gain(0.75);

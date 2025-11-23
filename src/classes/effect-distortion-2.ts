@@ -1,56 +1,58 @@
-// import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
-// import * as algos from "../utils/distortion-algorithms";
-// import type Drome from "./drome";
+import AutomatableEffect from "./effect-automatable";
+import * as algos from "../utils/distortion-algorithms";
+import type Envelope from "./envelope";
+import type LFO from "./lfo";
 
-// type DistortionAlgorithm = keyof typeof algos;
+type DistortionAlgorithm = keyof typeof algos;
 
-// interface BitcrusherEffectOptions extends DromeEffectOptions {
-//   distortion?: number;
-//   postgain?: number;
-//   type: DistortionAlgorithm
-// }
+interface BitcrusherEffectOptions {
+  distortion: (number | number[])[] | [LFO] | [Envelope];
+  postgain?: number;
+  type?: DistortionAlgorithm;
+}
 
-// class BitcrusherEffect extends DromeEffect {
-// //   private bcNode: AudioWorkletNode;
+class DistortionEffect extends AutomatableEffect<AudioWorkletNode> {
+  protected _input: GainNode;
+  protected _effect: AudioWorkletNode;
+  protected _target: AudioParam;
 
-//   constructor(
-//     drome: Drome,
-//     { distortion, postgain, type }: BitcrusherEffectOptions = {}
-//   ) {
-//     // super(drome, { mix, variableDry: true });
+  constructor(
+    ctx: AudioContext,
+    { distortion, postgain = 1, type }: BitcrusherEffectOptions
+  ) {
+    super(distortion);
 
-//     // this.bcNode = new AudioWorkletNode(drome.ctx, "distortion-processor");
-//     // this.bitDepth(bitDepth);
-//     // this.rateReduction(rateReduction);
+    this._input = new GainNode(ctx);
+    this._effect = new AudioWorkletNode(ctx, "distortion-processor", {
+      processorOptions: { algorithm: type },
+    } as AudioWorkletNodeOptions);
+    this._target = this.distortionParam;
 
-//     // // Dry path
-//     // this.input.connect(this._dry);
+    this.distort(this._defaultValue);
+    this.postgain(postgain);
+  }
 
-//     // // Wet path
-//     // this.input.connect(this.bcNode).connect(this._wet);
-//   }
+  distort(v: number) {
+    this.distortionParam.value = v;
+  }
 
-// //   bitDepth(v: number) {
-// //     this.bitParam.value = v;
-// //   }
+  postgain(v: number) {
+    this.postgainParam.value = v;
+  }
 
-// //   rateReduction(v: number) {
-// //     this.rateParam.value = v;
-// //   }
+  get distortionParam() {
+    const param = this._effect.parameters.get("distortion");
+    if (!param)
+      throw new Error("[DistortionEffect] couldn't get 'distortion' param");
+    return param;
+  }
 
-// //   get bitParam() {
-// //     const param = this.bcNode.parameters.get("bitDepth");
-// //     if (!param)
-// //       throw new Error("[BitcrusherEffect] couldn't get 'bitDepth' param");
-// //     return param;
-// //   }
+  get postgainParam() {
+    const param = this._effect.parameters.get("postgain");
+    if (!param)
+      throw new Error("[DistortionEffect] couldn't get 'postgain' param");
+    return param;
+  }
+}
 
-// //   get rateParam() {
-// //     const param = this.bcNode.parameters.get("rateReduction");
-// //     if (!param)
-// //       throw new Error("[BitcrusherEffect] couldn't get 'rateReduction' param");
-// //     return param;
-// //   }
-// // }
-
-// export default BitcrusherEffect;
+export default DistortionEffect;
