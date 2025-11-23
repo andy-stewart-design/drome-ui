@@ -4,18 +4,8 @@ class BitcrushProcessor extends AudioWorkletProcessor {
 
   static get parameterDescriptors() {
     return [
-      {
-        name: "rateReduction",
-        defaultValue: 8, // update every 8 samples
-        minValue: 1,
-        maxValue: 128,
-      },
-      {
-        name: "bitDepth",
-        defaultValue: 8,
-        minValue: 1,
-        maxValue: 16,
-      },
+      { name: "rateReduction", defaultValue: 8, minValue: 1, maxValue: 128 },
+      { name: "bitDepth", defaultValue: 8, minValue: 1, maxValue: 16 },
     ];
   }
 

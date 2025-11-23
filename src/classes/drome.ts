@@ -4,6 +4,7 @@ import LFO from "./lfo";
 import Sample from "./sample";
 import Synth from "./synth";
 import bitcrusherUrl from "./worklet-bitcrusher?url";
+import distortionUrl from "./worklet-bitcrusher?url";
 import { getSamplePath } from "../utils/get-sample-path";
 import { loadSample } from "../utils/load-sample";
 import { bufferId } from "../utils/cache-id";
@@ -21,7 +22,16 @@ class Drome {
 
   static async init(bpm?: number) {
     const drome = new Drome(bpm);
-    await drome.ctx.audioWorklet.addModule(bitcrusherUrl);
+
+    try {
+      await Promise.all([
+        drome.ctx.audioWorklet.addModule(bitcrusherUrl),
+        drome.ctx.audioWorklet.addModule(distortionUrl),
+      ]);
+    } catch (error) {
+      console.warn(error);
+    }
+
     return drome;
   }
 

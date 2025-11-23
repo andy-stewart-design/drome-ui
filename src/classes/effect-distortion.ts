@@ -11,14 +11,14 @@ class DistortionEffect extends DromeEffect {
 
   constructor(
     drome: Drome,
-    { amount = 50, oversample = "4x", mix = 0.5 }: DistortionEffectOptions = {}
+    { amount = 50, oversample = "4x", mix = 1 }: DistortionEffectOptions = {}
   ) {
-    super(drome, { mix, variableDry: false });
+    super(drome, { mix });
     this.waveShaper = new WaveShaperNode(drome.ctx, { oversample });
     this.setAmount(amount);
 
     // Dry path
-    this.input.connect(this._dry);
+    // this.input.connect(this._dry);
 
     // Wet path
     this.input.connect(this.waveShaper).connect(this._wet);
