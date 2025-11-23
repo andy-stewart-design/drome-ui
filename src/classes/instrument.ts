@@ -306,11 +306,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  crush(bitDepth: number, rateReduction = 1, mix = 1) {
-    const effect = new BitcrusherEffect(this._drome, {
+  crush(bd: number | string | LFO | Envelope, rateReduction = 1) {
+    const bitDepth = parseCycleInput(bd);
+    const effect = new BitcrusherEffect(this.ctx, {
       bitDepth,
       rateReduction,
-      mix,
     });
     this._signalChain.add(effect);
     return this;

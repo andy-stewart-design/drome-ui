@@ -1,29 +1,29 @@
-import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
-import type Drome from "./drome";
+import AutomatableEffect from "./effect-automatable";
+import type Envelope from "./envelope";
+import type LFO from "./lfo";
 
-interface BitcrusherEffectOptions extends DromeEffectOptions {
-  bitDepth?: number;
+interface BitcrusherEffectOptions {
+  bitDepth: (number | number[])[] | [LFO] | [Envelope];
   rateReduction?: number;
 }
 
-class BitcrusherEffect extends DromeEffect {
-  private bcNode: AudioWorkletNode;
+class BitcrusherEffect extends AutomatableEffect<AudioWorkletNode> {
+  protected _input: GainNode;
+  protected _effect: AudioWorkletNode;
+  protected _target: AudioParam;
 
   constructor(
-    drome: Drome,
-    { bitDepth = 16, rateReduction = 1, mix = 1 }: BitcrusherEffectOptions = {}
+    ctx: AudioContext,
+    { bitDepth, rateReduction = 1 }: BitcrusherEffectOptions
   ) {
-    super(drome, { mix, variableDry: true });
+    super(bitDepth);
 
-    this.bcNode = new AudioWorkletNode(drome.ctx, "bitcrush-processor");
-    this.bitDepth(bitDepth);
+    this._input = new GainNode(ctx);
+    this._effect = new AudioWorkletNode(ctx, "bitcrush-processor");
+    this._target = this.bitParam;
+
+    this.bitDepth(this._defaultValue);
     this.rateReduction(rateReduction);
-
-    // Dry path
-    this.input.connect(this._dry);
-
-    // Wet path
-    this.input.connect(this.bcNode).connect(this._wet);
   }
 
   bitDepth(v: number) {
@@ -35,14 +35,14 @@ class BitcrusherEffect extends DromeEffect {
   }
 
   get bitParam() {
-    const param = this.bcNode.parameters.get("bitDepth");
+    const param = this._effect.parameters.get("bitDepth");
     if (!param)
       throw new Error("[BitcrusherEffect] couldn't get 'bitDepth' param");
     return param;
   }
 
   get rateParam() {
-    const param = this.bcNode.parameters.get("rateReduction");
+    const param = this._effect.parameters.get("rateReduction");
     if (!param)
       throw new Error("[BitcrusherEffect] couldn't get 'rateReduction' param");
     return param;
