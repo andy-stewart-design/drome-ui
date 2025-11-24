@@ -327,7 +327,6 @@ abstract class Instrument<T> {
 
   beforePlay(barStart: number, barDuration: number) {
     // stop current lfos to make sure that lfo period stays synced with bpm
-    // this._lfoMap.forEach((lfo) => !lfo.paused && lfo.stop(barStart));
     this._gain.lfo?.stop();
     this._detune.lfo?.stop();
 
@@ -381,10 +380,6 @@ abstract class Instrument<T> {
       this._gainNodes.clear();
       this._audioNodes.forEach((node) => node.disconnect());
       this._audioNodes.clear();
-      // this._lfoMap.forEach((lfo) => {
-      //   lfo.stop();
-      //   lfo.disconnect();
-      // });
       this._isConnected = false;
     }, 100);
   }

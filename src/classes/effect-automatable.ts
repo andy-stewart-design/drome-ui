@@ -38,6 +38,8 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
     startTime: number,
     duration: number
   ) {
+    console.log(this._target, this._env);
+
     if (!this._target) return;
 
     if (this._lfo && !this._lfo.paused) this._lfo.stop(startTime);
