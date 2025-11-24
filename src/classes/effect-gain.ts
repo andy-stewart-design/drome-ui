@@ -16,7 +16,7 @@ class GainEffect extends AutomatableEffect<GainNode> {
 
     this._input = new GainNode(ctx);
     this._effect = new GainNode(ctx, { gain: this._defaultValue });
-    this._target = this._input.gain;
+    this._target = this._effect.gain;
   }
 }
 

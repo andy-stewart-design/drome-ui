@@ -33,9 +33,9 @@ const lfo2 = d.lfo(-0.5, 0.5, 16).type("sine");
 d.synth("triangle")
   .note(note)
   .euclid(4, 4)
-  // .lpf(env)
-  // .crush(4)
-  // .pan(lfo2)
+  .lpf(lfo)
+  .crush(4)
+  .pan(lfo2)
   .gain(d.env(0.5, 1).adsr(0.1, 0.5, 0));
 
 // const lfo = d.lfo(0.1, 1, 16).type("sine");
