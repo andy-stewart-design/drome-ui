@@ -1,8 +1,6 @@
 // Utils
-const clamp = (num: number, min: number, max: number) =>
-  Math.min(Math.max(num, min), max);
-const squash = (x: number) => x / (1 + x); // [0, inf) to [0, 1)
-const mod = (n: number, m: number) => ((n % m) + m) % m;
+
+import { clamp, mod, squash } from "./math";
 
 // Core Distortion Algorithms
 const sigmoid = (x: number, k: number) => ((1 + k) * x) / (1 + k * Math.abs(x));

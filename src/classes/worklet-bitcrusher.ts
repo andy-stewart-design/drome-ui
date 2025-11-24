@@ -1,3 +1,5 @@
+import { av } from "../utils/worklet-utils";
+
 class BitcrushProcessor extends AudioWorkletProcessor {
   private phase: number;
   private lastSample: number;
@@ -38,16 +40,11 @@ class BitcrushProcessor extends AudioWorkletProcessor {
         for (let i = 0; i < sampleCount; i++) {
           const sample = inChan[i];
 
-          const currentRate =
-            rateParam.length > 1 ? rateParam[i] : rateParam[0];
-          const currentBits =
-            bitsParam.length > 1 ? bitsParam[i] : bitsParam[0];
-
           this.phase++;
-          if (this.phase >= currentRate) {
+          if (this.phase >= av(rateParam, i)) {
             this.phase = 0;
 
-            const step = Math.pow(0.5, currentBits);
+            const step = Math.pow(0.5, av(bitsParam, i));
             this.lastSample = step * Math.floor(sample / step + 0.5);
           }
 

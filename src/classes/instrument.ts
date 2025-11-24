@@ -1,5 +1,3 @@
-// TODO: centralize distortion type defs
-// TODO: clean up unused files
 // TODO: Revisit instrument cleanup method and generally tidy up
 
 import AutomatableEffect from "./effect-automatable";
@@ -20,13 +18,11 @@ import type Drome from "./drome";
 import type {
   AdsrMode,
   AdsrEnvelope,
+  DistortionAlgorithm,
   InstrumentType,
   Note,
   Nullable,
 } from "../types";
-
-import * as algos from "../utils/distortion-algorithms";
-type DistortionAlgorithm = keyof typeof algos;
 
 interface InstrumentOptions<T> {
   destination: AudioNode;

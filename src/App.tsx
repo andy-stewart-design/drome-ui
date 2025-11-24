@@ -49,10 +49,8 @@ d.addSamples(
 //   .lpf(800)
 //   .distort(100, 1);
 
-d.synth("sine")
-  .note(note, note)
-  .env(0.01, 0.5, 0)
-  .distort(d.lfo(1, 8, 16), 0.25, "chebyshev");
+d.synth("sine").note(note, note).env(0.01, 0.5, 0).crush(4);
+// .distort(d.lfo(1, 8, 16), 0.25, "chebyshev");
 // .delay("0.25, 0.125", 0.3);
 
 // d.sample("hh").euclid(4, 4).gain(0.25);

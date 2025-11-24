@@ -1,9 +1,7 @@
 import AutomatableEffect from "./effect-automatable";
-import * as algos from "../utils/distortion-algorithms";
 import type Envelope from "./envelope";
 import type LFO from "./lfo";
-
-type DistortionAlgorithm = keyof typeof algos;
+import type { DistortionAlgorithm } from "../types";
 
 interface DistortionEffectOptions {
   distortion: (number | number[])[] | [LFO] | [Envelope];

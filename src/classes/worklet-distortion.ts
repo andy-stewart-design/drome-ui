@@ -1,17 +1,13 @@
 import * as algos from "../utils/distortion-algorithms";
+import { clamp } from "../utils/math";
+import { av } from "../utils/worklet-utils";
+import type { DistortionAlgorithm, DistortionFunction } from "../types";
 
 interface DistortionOptions extends AudioWorkletNodeOptions {
   processorOptions: {
     algorithm?: DistortionAlgorithm;
   };
 }
-
-type DistortionAlgorithm = keyof typeof algos;
-type DistortionFunction = (typeof algos)[DistortionAlgorithm];
-
-const clamp = (num: number, min: number, max: number) =>
-  Math.min(Math.max(num, min), max);
-const pv = (arr: Float32Array<ArrayBufferLike>, n: number) => arr[n] ?? arr[0];
 
 class DistortionProcessor extends AudioWorkletProcessor {
   private algorithm: DistortionFunction;
@@ -23,10 +19,10 @@ class DistortionProcessor extends AudioWorkletProcessor {
     ];
   }
 
-  constructor(options: DistortionOptions) {
+  constructor({ processorOptions }: DistortionOptions) {
     super();
 
-    const { algorithm = "sigmoid" } = options.processorOptions ?? {};
+    const { algorithm = "sigmoid" } = processorOptions ?? {};
 
     this.algorithm = algos[algorithm];
   }
@@ -48,8 +44,8 @@ class DistortionProcessor extends AudioWorkletProcessor {
         const distArr = parameters.distortion;
 
         for (let i = 0; i < input[chanNum].length; i++) {
-          const postgain = clamp(pv(postArr, i), 0.001, 1);
-          const shape = Math.expm1(pv(distArr, i));
+          const postgain = clamp(av(postArr, i), 0.001, 1);
+          const shape = Math.expm1(av(distArr, i));
 
           output[chanNum][i] =
             postgain * this.algorithm(input[chanNum][i], shape);

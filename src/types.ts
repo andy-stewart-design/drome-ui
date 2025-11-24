@@ -1,4 +1,5 @@
 import type DromeArray from "./classes/drome-array";
+import * as algos from "./utils/distortion-algorithms";
 
 type Nullable<T> = T | null | undefined;
 
@@ -38,10 +39,15 @@ type Note<T> = {
   duration: number;
 } | null;
 
+type DistortionAlgorithm = keyof typeof algos;
+type DistortionFunction = (typeof algos)[DistortionAlgorithm];
+
 export type {
   AdsrEnvelope,
   AdsrMode,
   AutomatableParam,
+  DistortionAlgorithm,
+  DistortionFunction,
   DromeCycleValue,
   DromeEventCallback,
   DromeEventType,
