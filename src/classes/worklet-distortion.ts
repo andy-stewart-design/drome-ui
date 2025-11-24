@@ -47,12 +47,13 @@ class DistortionProcessor extends AudioWorkletProcessor {
         const postArr = parameters.postgain;
         const distArr = parameters.distortion;
 
-        input[chanNum].forEach((sample, i) => {
+        for (let i = 0; i < input[chanNum].length; i++) {
           const postgain = clamp(pv(postArr, i), 0.001, 1);
           const shape = Math.expm1(pv(distArr, i));
 
-          output[chanNum][i] = postgain * this.algorithm(sample, shape);
-        });
+          output[chanNum][i] =
+            postgain * this.algorithm(input[chanNum][i], shape);
+        }
       }
     }
 

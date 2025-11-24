@@ -1,9 +1,11 @@
+// TODO: centralize distortion type defs
+// TODO: clean up unused files
 // TODO: Revisit instrument cleanup method and generally tidy up
 
 import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
-import DelayEffect from "./effect-delay-2";
-import DistortionEffect2 from "./effect-distortion-2";
+import DelayEffect from "./effect-delay";
+import DistortionEffect from "./effect-distortion";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./effect-filter";
@@ -11,7 +13,7 @@ import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
 import LFO from "./lfo";
-import ReverbEffect from "./effect-reverb-2";
+import ReverbEffect from "./effect-reverb";
 import { DetuneSourceEffect, GainSourceEffect } from "./effect-source";
 import { isNullish } from "../utils/validators";
 import type Drome from "./drome";
@@ -23,7 +25,6 @@ import type {
   Nullable,
 } from "../types";
 
-// TODO: centralize type defs
 import * as algos from "../utils/distortion-algorithms";
 type DistortionAlgorithm = keyof typeof algos;
 
@@ -182,7 +183,6 @@ abstract class Instrument<T> {
     return this;
   }
 
-  // TODO: Add env getter to effects
   adsrMode(mode: AdsrMode) {
     this._gain.env.mode(mode);
     this._detune.env?.mode(mode);
@@ -310,7 +310,7 @@ abstract class Instrument<T> {
     type?: DistortionAlgorithm
   ) {
     const distortion = parseCycleInput(amount);
-    const effect = new DistortionEffect2(this.ctx, {
+    const effect = new DistortionEffect(this.ctx, {
       distortion,
       postgain,
       type,

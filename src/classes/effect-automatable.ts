@@ -53,8 +53,6 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
     } else {
       const cycleIndex = currentBar % this._cycles.length;
       const steps = this._cycles.at(cycleIndex);
-      console.log(steps);
-
       applySteppedRamp({ target: this._target, startTime, duration, steps });
     }
   }

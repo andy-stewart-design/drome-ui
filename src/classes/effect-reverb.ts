@@ -1,9 +1,11 @@
 // TODO: finish logic for loading reverb samples
 
-import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
+import AutomatableEffect from "./effect-automatable";
+import type LFO from "./lfo";
+import type Envelope from "./envelope";
 
 interface LocalSampleSource {
   registered: true;
@@ -18,22 +20,32 @@ interface RemoteSampleSource {
 
 type SampleSource = RemoteSampleSource | LocalSampleSource;
 
-interface ReverbOptions extends DromeEffectOptions {
+interface ReverbOptions {
+  mix?: (number | number[])[] | [LFO] | [Envelope];
   src?: SampleSource;
   decay?: number; // IR decay time in seconds
   lpfStart?: number;
   lpfEnd?: number; // dim
 }
 
-class ReverbEffect extends DromeEffect {
+class ReverbEffect extends AutomatableEffect<ConvolverNode> {
+  protected _input: GainNode;
+  protected _effect: ConvolverNode;
+  protected _target: AudioParam;
+  private _dry: GainNode;
+  private _wet: GainNode;
   private _id: string;
-  private _convolver: ConvolverNode;
 
   constructor(drome: Drome, opts: ReverbOptions = {}) {
-    const { mix = 0.1, src, decay = 1, lpfStart, lpfEnd } = opts;
-    super(drome, { mix });
+    const { mix = [0.1], src, decay = 1, lpfStart, lpfEnd } = opts;
+    super(mix);
 
-    this._convolver = new ConvolverNode(drome.ctx);
+    this._input = new GainNode(drome.ctx);
+    this._effect = new ConvolverNode(drome.ctx);
+    this._dry = new GainNode(drome.ctx);
+    this._wet = new GainNode(drome.ctx, { gain: this._defaultValue });
+    this._target = this._wet.gain;
+
     this._id = src?.registered
       ? `${src.bank}-${src.name}`
       : `${decay}-${lpfStart || 0}-${lpfEnd || 0}`;
@@ -42,15 +54,9 @@ class ReverbEffect extends DromeEffect {
       this.loadSample(drome, src);
     } else {
       const buffer = drome.reverbCache.get(this._id);
-      if (buffer) this._convolver.buffer = buffer;
+      if (buffer) this._effect.buffer = buffer;
       else this.createBuffer(drome, decay, lpfStart, lpfEnd);
     }
-
-    // Dry path
-    this.input.connect(this._dry);
-
-    // Wet path
-    this.input.connect(this._convolver).connect(this._wet);
   }
 
   private async createBuffer(
@@ -62,11 +68,11 @@ class ReverbEffect extends DromeEffect {
     const buffer = createImpulseResponse(drome.ctx, decay);
     if (lpfStart) {
       renderFilter(buffer, decay, lpfStart, lpfEnd).then((out) => {
-        this._convolver.buffer = out;
+        this._effect.buffer = out;
         drome.reverbCache.set(this._id, out);
       });
     } else {
-      this._convolver.buffer = buffer;
+      this._effect.buffer = buffer;
       drome.reverbCache.set(this._id, buffer);
     }
   }
@@ -80,18 +86,25 @@ class ReverbEffect extends DromeEffect {
         return;
       }
 
-      this._convolver.buffer = buffer;
+      this._effect.buffer = buffer;
     } else {
       const [name, index] = src.name.split(":");
 
       const { buffer } = await drome.loadSample(src.bank, name, index);
 
-      if (buffer) this._convolver.buffer = buffer;
+      if (buffer) this._effect.buffer = buffer;
     }
   }
 
+  connect(dest: AudioNode) {
+    // Dry signal passes through unaffected
+    this.input.connect(this._dry).connect(dest);
+    // Wet signal with effect
+    this.input.connect(this._effect).connect(this._wet).connect(dest);
+  }
+
   get buffer() {
-    return this._convolver.buffer;
+    return this._effect.buffer;
   }
 }
 

@@ -1,44 +1,57 @@
-import DromeEffect, { type DromeEffectOptions } from "./effect-drome";
-import type Drome from "./drome";
+import AutomatableEffect from "./effect-automatable";
+import * as algos from "../utils/distortion-algorithms";
+import type Envelope from "./envelope";
+import type LFO from "./lfo";
 
-interface DistortionEffectOptions extends DromeEffectOptions {
-  amount?: number; // controls distortion intensity
-  oversample?: OverSampleType; // 'none' | '2x' | '4x'
+type DistortionAlgorithm = keyof typeof algos;
+
+interface DistortionEffectOptions {
+  distortion: (number | number[])[] | [LFO] | [Envelope];
+  postgain?: number;
+  type?: DistortionAlgorithm;
 }
 
-class DistortionEffect extends DromeEffect {
-  private waveShaper: WaveShaperNode;
+class DistortionEffect extends AutomatableEffect<AudioWorkletNode> {
+  protected _input: GainNode;
+  protected _effect: AudioWorkletNode;
+  protected _target: AudioParam;
 
   constructor(
-    drome: Drome,
-    { amount = 50, oversample = "4x", mix = 1 }: DistortionEffectOptions = {}
+    ctx: AudioContext,
+    { distortion, postgain = 1, type }: DistortionEffectOptions
   ) {
-    super(drome, { mix });
-    this.waveShaper = new WaveShaperNode(drome.ctx, { oversample });
-    this.setAmount(amount);
+    super(distortion);
 
-    // Dry path
-    // this.input.connect(this._dry);
+    this._input = new GainNode(ctx);
+    this._effect = new AudioWorkletNode(ctx, "distortion-processor", {
+      processorOptions: { algorithm: type },
+    } as AudioWorkletNodeOptions);
+    this._target = this.distortionParam;
 
-    // Wet path
-    this.input.connect(this.waveShaper).connect(this._wet);
+    this.distort(this._defaultValue);
+    this.postgain(postgain);
   }
 
-  setAmount(amount: number) {
-    this.waveShaper.curve = this.makeDistortionCurve(amount);
+  distort(v: number) {
+    this.distortionParam.value = v;
   }
 
-  private makeDistortionCurve(amount: number) {
-    const samples = 44100;
-    const curve = new Float32Array(samples);
-    const deg = Math.PI / 180;
+  postgain(v: number) {
+    this.postgainParam.value = v;
+  }
 
-    for (let i = 0; i < samples; i++) {
-      const x = (i * 2) / samples - 1;
-      curve[i] =
-        ((3 + amount) * x * 20 * deg) / (Math.PI + amount * Math.abs(x));
-    }
-    return curve;
+  get distortionParam() {
+    const param = this._effect.parameters.get("distortion");
+    if (!param)
+      throw new Error("[DistortionEffect] couldn't get 'distortion' param");
+    return param;
+  }
+
+  get postgainParam() {
+    const param = this._effect.parameters.get("postgain");
+    if (!param)
+      throw new Error("[DistortionEffect] couldn't get 'postgain' param");
+    return param;
   }
 }
 
