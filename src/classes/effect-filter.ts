@@ -1,11 +1,10 @@
 import AutomatableEffect from "./effect-automatable";
 import Envelope from "./envelope";
-import LFO from "./lfo";
-import type { FilterType } from "../types";
+import type { Automatable, FilterType } from "../types";
 
 interface DromeFilterOptions {
   type: FilterType;
-  frequency: (number | number[])[] | [LFO] | [Envelope];
+  frequency: Automatable;
 }
 
 class DromeFilter extends AutomatableEffect<BiquadFilterNode> {

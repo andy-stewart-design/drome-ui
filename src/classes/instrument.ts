@@ -1,4 +1,3 @@
-// TODO: Simplify/unify pattern/cycle/note/etc types
 // TODO: Revisit instrument cleanup method and generally tidy up
 
 import AutomatableEffect from "./effect-automatable";
@@ -8,21 +7,33 @@ import DistortionEffect from "./effect-distortion";
 import DromeAudioNode from "./drome-audio-node";
 import DromeCycle from "./drome-cycle";
 import DromeFilter from "./effect-filter";
-import Envelope from "./envelope";
 import GainEffect from "./effect-gain";
 import PanEffect from "./effect-pan";
-import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
 import { DetuneSourceEffect, GainSourceEffect } from "./effect-source";
-import { isEnvTuple, isLfoTuple, isNullish } from "../utils/validators";
+import {
+  parseStepPatternInput,
+  parseAutomatableInput,
+  parsePatternString,
+  parseRestInput,
+} from "../utils/parse-pattern";
+import {
+  isEnvTuple,
+  isLfoTuple,
+  isNullish,
+  isStringTuple,
+} from "../utils/validators";
 import type Drome from "./drome";
 import type {
   AdsrMode,
   AdsrEnvelope,
+  AutomatableInput,
   DistortionAlgorithm,
   InstrumentType,
   Note,
   Nullable,
+  RestInput,
+  StepPatternInput,
 } from "../types";
 
 interface InstrumentOptions<T> {
@@ -31,14 +42,6 @@ interface InstrumentOptions<T> {
   baseGain?: number;
   adsr?: AdsrEnvelope;
 }
-
-type SteppableInput = number | string;
-type Steppable = (number | number[])[];
-type AutomatableInput = SteppableInput | LFO | Envelope;
-type Automatable = Steppable | [LFO] | [Envelope];
-
-type StepPatternInput = number | string;
-type StepPattern = (number | number[])[];
 
 abstract class Instrument<T> {
   protected _drome: Drome;
@@ -54,7 +57,7 @@ abstract class Instrument<T> {
   protected readonly _gainNodes: Set<GainNode>;
 
   // Method Aliases
-  amp: (...v: Automatable) => this;
+  amp: (...v: RestInput) => this;
   env: (a: number, d?: number, s?: number, r?: number) => this;
   envMode: (mode: AdsrMode) => this;
   rev: () => this;
@@ -145,10 +148,12 @@ abstract class Instrument<T> {
     return this;
   }
 
-  amplitude(...v: Automatable) {
+  amplitude(...v: RestInput) {
     if (isLfoTuple(v)) {
       this._gain.cycles.note(v[0].value);
       this._gain.lfo = v[0];
+    } else if (isStringTuple(v)) {
+      this._gain.cycles.note(...parsePatternString(v[0]));
     } else if (!isEnvTuple(v)) {
       this._gain.cycles.note(...v);
     }
@@ -190,16 +195,19 @@ abstract class Instrument<T> {
     return this;
   }
 
-  gain(...gain: Automatable) {
-    const effect = new GainEffect(this.ctx, { gain });
+  gain(...input: RestInput) {
+    const effect = new GainEffect(this.ctx, { gain: parseRestInput(input) });
 
     this._signalChain.add(effect);
 
     return this;
   }
 
-  bpf(...frequency: Automatable) {
-    const f = new DromeFilter(this.ctx, { type: "bandpass", frequency });
+  bpf(...input: RestInput) {
+    const f = new DromeFilter(this.ctx, {
+      type: "bandpass",
+      frequency: parseRestInput(input),
+    });
 
     this._signalChain.add(f);
 
@@ -215,8 +223,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hpf(...frequency: Automatable) {
-    const f = new DromeFilter(this.ctx, { type: "highpass", frequency });
+  hpf(...input: RestInput) {
+    const f = new DromeFilter(this.ctx, {
+      type: "highpass",
+      frequency: parseRestInput(input),
+    });
 
     this._signalChain.add(f);
 
@@ -232,8 +243,11 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpf(...frequency: Automatable) {
-    const f = new DromeFilter(this.ctx, { type: "lowpass", frequency });
+  lpf(...input: RestInput) {
+    const f = new DromeFilter(this.ctx, {
+      type: "lowpass",
+      frequency: parseRestInput(input),
+    });
 
     this._signalChain.add(f);
 
@@ -249,12 +263,14 @@ abstract class Instrument<T> {
     return this;
   }
 
-  detune(...v: Automatable) {
+  detune(...v: RestInput) {
     if (isLfoTuple(v)) {
       this._detune.cycles.note(v[0].value);
       this._detune.lfo = v[0];
     } else if (isEnvTuple(v)) {
       this._detune.env = v[0];
+    } else if (isStringTuple(v)) {
+      this._detune.cycles.note(...parsePatternString(v[0]));
     } else {
       this._detune.cycles.note(...v);
     }
@@ -262,10 +278,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  pan(...input: Automatable) {
-    const effect = new PanEffect(this.ctx, {
-      pan: isEnvTuple(input) || isLfoTuple(input) ? input[0] : input,
-    });
+  pan(...input: RestInput) {
+    const effect = new PanEffect(this.ctx, { pan: parseRestInput(input) });
 
     this._signalChain.add(effect);
 
@@ -279,7 +293,7 @@ abstract class Instrument<T> {
   reverb(a: AutomatableInput, b?: string, c?: string): this;
   reverb(mix: AutomatableInput, b: unknown = 1, c: unknown = 1600, d?: number) {
     let effect: ReverbEffect;
-    const parsedMix = parseCycleInput(mix);
+    const parsedMix = parseAutomatableInput(mix);
 
     if (typeof b === "number" && typeof c === "number") {
       const lpfEnd = d || 1000;
@@ -298,8 +312,8 @@ abstract class Instrument<T> {
     return this;
   }
 
-  delay(dt: SteppableInput, feedback: number) {
-    const delayTime = parsePattern(dt);
+  delay(dt: StepPatternInput, feedback: number) {
+    const delayTime = parseStepPatternInput(dt);
     const effect = new DelayEffect(this._drome, { delayTime, feedback });
 
     this._signalChain.add(effect);
@@ -312,7 +326,7 @@ abstract class Instrument<T> {
     postgain?: number,
     type?: DistortionAlgorithm
   ) {
-    const distortion = parseCycleInput(amount);
+    const distortion = parseAutomatableInput(amount);
     const effect = new DistortionEffect(this.ctx, {
       distortion,
       postgain,
@@ -323,7 +337,7 @@ abstract class Instrument<T> {
   }
 
   crush(bd: AutomatableInput, rateReduction = 1) {
-    const bitDepth = parseCycleInput(bd);
+    const bitDepth = parseAutomatableInput(bd);
     const effect = new BitcrusherEffect(this.ctx, {
       bitDepth,
       rateReduction,
@@ -398,37 +412,3 @@ abstract class Instrument<T> {
 
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
-
-function parsePattern(input: number | string): Steppable {
-  if (typeof input === "string") return parsePatternString(input);
-  return [input];
-}
-
-function parseCycleInput(input: AutomatableInput): Automatable {
-  if (input instanceof Envelope) return [input];
-  else if (input instanceof LFO) return [input];
-  else return parsePattern(input);
-}
-
-function parsePatternString(input: string) {
-  const err = `[DROME] could not parse pattern string: ${input}`;
-  try {
-    const parsed = JSON.parse(`[${input}]`);
-    if (!isPattern(parsed)) throw new Error(err);
-    return parsed;
-  } catch {
-    console.warn(err);
-    return [];
-  }
-}
-
-function isPattern(input: unknown): input is Steppable {
-  return (
-    Array.isArray(input) &&
-    input.reduce<boolean>((_, x) => {
-      if (typeof x === "number") return true;
-      else if (Array.isArray(x)) return x.every((x) => typeof x === "number");
-      return false;
-    }, true)
-  );
-}

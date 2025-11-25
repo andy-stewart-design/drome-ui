@@ -1,9 +1,10 @@
+import AutomatableEffect from "./effect-automatable";
 import { isNumber } from "../utils/validators";
 import type Drome from "./drome";
-import AutomatableEffect from "./effect-automatable";
+import type { StepPattern } from "../types";
 
 interface DelayEffectOptions {
-  delayTime: (number | number[])[];
+  delayTime: StepPattern;
   feedback: number;
 }
 

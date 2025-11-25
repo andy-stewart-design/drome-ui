@@ -1,10 +1,8 @@
 import AutomatableEffect from "./effect-automatable";
-import type Envelope from "./envelope";
-import type LFO from "./lfo";
-import type { DistortionAlgorithm } from "../types";
+import type { Automatable, DistortionAlgorithm } from "../types";
 
 interface DistortionEffectOptions {
-  distortion: (number | number[])[] | [LFO] | [Envelope];
+  distortion: Automatable;
   postgain?: number;
   type?: DistortionAlgorithm;
 }

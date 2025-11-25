@@ -1,9 +1,8 @@
+import type { Automatable } from "../types";
 import AutomatableEffect from "./effect-automatable";
-import type Envelope from "./envelope";
-import type LFO from "./lfo";
 
 interface BitcrusherEffectOptions {
-  bitDepth: (number | number[])[] | [LFO] | [Envelope];
+  bitDepth: Automatable;
   rateReduction?: number;
 }
 

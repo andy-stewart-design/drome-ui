@@ -1,9 +1,8 @@
+import type { Automatable } from "../types";
 import AutomatableEffect from "./effect-automatable";
-import Envelope from "./envelope";
-import LFO from "./lfo";
 
 interface DromeFilterOptions {
-  gain: (number | number[])[] | [LFO] | [Envelope];
+  gain: Automatable;
 }
 
 class GainEffect extends AutomatableEffect<GainNode> {

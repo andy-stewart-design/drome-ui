@@ -1,5 +1,9 @@
+// TODO: do StepPattern, etc. need to be nullable?
+
 import type DromeArray from "./classes/drome-array";
-import * as algos from "./utils/distortion-algorithms";
+import type Envelope from "./classes/envelope";
+import type LFO from "./classes/lfo";
+import type * as algos from "./utils/distortion-algorithms";
 
 type Nullable<T> = T | null | undefined;
 
@@ -26,10 +30,10 @@ type FilterType = "bandpass" | "highpass" | "lowpass";
 interface FilterOptions {
   node: BiquadFilterNode;
   frequencies: DromeArray<number>;
-  // env: { depth: number; adsr: AdsrEnvelope } | undefined;
 }
 
-type AutomatableParam = "gain" | "postgain" | "detune" | "pan";
+type DistortionAlgorithm = keyof typeof algos;
+type DistortionFunction = (typeof algos)[DistortionAlgorithm];
 
 type DromeCycleValue<T> = Nullable<T>[][];
 
@@ -39,13 +43,17 @@ type Note<T> = {
   duration: number;
 } | null;
 
-type DistortionAlgorithm = keyof typeof algos;
-type DistortionFunction = (typeof algos)[DistortionAlgorithm];
+type StepPatternInput = number | string;
+type StepPattern = (number | number[])[];
+type AutomatableInput = StepPatternInput | LFO | Envelope;
+type Automatable = StepPattern | LFO | Envelope;
+type RestInput = StepPattern | [string] | [LFO] | [Envelope];
 
 export type {
+  Automatable,
+  AutomatableInput,
   AdsrEnvelope,
   AdsrMode,
-  AutomatableParam,
   DistortionAlgorithm,
   DistortionFunction,
   DromeCycleValue,
@@ -57,4 +65,7 @@ export type {
   Metronome,
   Note,
   Nullable,
+  RestInput,
+  StepPattern,
+  StepPatternInput,
 };

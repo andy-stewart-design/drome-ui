@@ -1,8 +1,8 @@
-import type { AdsrEnvelope } from "../types";
-import type Drome from "./drome";
 import DromeArray from "./drome-array";
 import Envelope from "./envelope";
 import LFO from "./lfo";
+import type Drome from "./drome";
+import type { AdsrEnvelope } from "../types";
 
 interface SourceEffectApplyArgs {
   node: OscillatorNode | AudioBufferSourceNode;

@@ -16,16 +16,16 @@ d.addSamples(
   "vox"
 );
 
-// d.synth("sawtooth")
-//   .note([72, 76, 79, 83], [69, 72, 76, 79])
-//   .euclid(16, 32)
-//   .adsr(0.01, 1, 0.75, 0.1)
-//   .lpf(d.env(1000, 2000).adsr(0.01, 0.75, 0.125, 0.1))
-//   // .detune(d.lfo(0, 1000, 4))
-//   .reverb(0.375);
-// d.sample("bd:3").bank("tr909").euclid([3, 5], 8).gain(1);
-// d.sample("hh:4").euclid(8, 8).pan(0.875).gain(0.375);
-// d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
+d.synth("sawtooth")
+  .note([72, 76, 79, 83], [69, 72, 76, 79])
+  .euclid(16, 32)
+  .adsr(0.01, 1, 0.75, 0.1)
+  .lpf(d.env(1000, 2000).adsr(0.01, 0.75, 0.125, 0.1))
+  // .detune(d.lfo(0, 1000, 4))
+  .reverb(0.375);
+d.sample("bd:3").bank("tr909").euclid([3, 5], 8).gain(1);
+d.sample("hh:4").euclid(8, 8).pan(0.875).gain(0.375);
+d.sample("oh:1").euclid(4, 8, 1).pan(0.125).gain(0.5);
 
 // const env = d.env(400, 800).adsr(0.05, 1, 0);
 // const lfo = d.lfo(400, 1600, 16).type("sine");
@@ -47,7 +47,7 @@ d.addSamples(
 //   // .lpf(800)
 //   // .crush(4)
 //   .lpf(800)
-//   .distort(100, 1);
+//   .distort(4, 0.5);
 
 // d.synth("sine")
 //   .note(note, note)
@@ -61,10 +61,10 @@ d.addSamples(
 
 // d.sample("bd:3").euclid(4, 4).reverb(0.2);
 
-d.synth("triangle")
-  .note([note, note + 4, note + 7, note + 4])
-  .euclid(4, 4)
-  .amp(d.lfo(0.1, 1, 16));
+// d.synth("triangle")
+//   .note([note, note + 4, note + 7, note + 4])
+//   .euclid(4, 4)
+//   .amp(d.lfo(0.1, 1, 16));
 //   .adsr(0.1, 0, 1, 0.1);
 // .adsr(0.1, 0.5, 0.25, 0.1);
 
@@ -104,12 +104,6 @@ d.synth("triangle")
 // d.synth("sawtooth")
 //   .env(0.05, 0.9, 0.25, 0.1)
 //   .lpf(d.env(300, 900).adsr(0.25, 0.25, 0.5))
-//   .note(note)
-//   .euclid(4, 4);
-// d.synth("sawtooth")
-//   .env(0.05, 0.9, 0.25, 0.1)
-//   .lpf(300)
-//   .lpenv(900, 0.125, 0.125, 0.5)
 //   .note(note)
 //   .euclid(4, 4);
 
@@ -169,8 +163,8 @@ d.synth("triangle")
 // d.sample("hh").bank("tr909").euclid(16, 16).pan(0.875);
 // d.sample("bd:0")
 //   .bank("tr909")
-//   .euclid(4, 4)
-//   .delay(0.125, 0.25, 0.25)
+//   .euclid(1, 4)
+//   .delay("0.125, 0.25", 0.25)
 //   .reverb(0.1);
 // d.sample("bd:0").bank("tr909").euclid(4, 4).reverb(0.8, "hey:1", "vox");
 // d.synth("triangle")

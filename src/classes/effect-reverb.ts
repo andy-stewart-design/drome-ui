@@ -1,11 +1,8 @@
-// TODO: finish logic for loading reverb samples
-
+import AutomatableEffect from "./effect-automatable";
 import { createImpulseResponse, renderFilter } from "../utils/reverb";
 import { loadSample } from "../utils/load-sample";
 import type Drome from "./drome";
-import AutomatableEffect from "./effect-automatable";
-import type LFO from "./lfo";
-import type Envelope from "./envelope";
+import type { Automatable } from "../types";
 
 interface LocalSampleSource {
   registered: true;
@@ -21,7 +18,7 @@ interface RemoteSampleSource {
 type SampleSource = RemoteSampleSource | LocalSampleSource;
 
 interface ReverbOptions {
-  mix?: (number | number[])[] | [LFO] | [Envelope];
+  mix?: Automatable;
   src?: SampleSource;
   decay?: number; // IR decay time in seconds
   lpfStart?: number;

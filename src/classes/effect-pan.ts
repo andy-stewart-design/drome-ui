@@ -1,9 +1,8 @@
+import type { Automatable } from "../types";
 import AutomatableEffect from "./effect-automatable";
-import Envelope from "./envelope";
-import LFO from "./lfo";
 
 interface DromeFilterOptions {
-  pan: (number | number[])[] | LFO | Envelope;
+  pan: Automatable;
 }
 
 class PanEffect extends AutomatableEffect<StereoPannerNode> {
