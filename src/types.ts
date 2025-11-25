@@ -1,5 +1,3 @@
-// TODO: do StepPattern, etc. need to be nullable?
-
 import type DromeArray from "./classes/drome-array";
 import type Envelope from "./classes/envelope";
 import type LFO from "./classes/lfo";
