@@ -66,6 +66,9 @@ class GainSourceEffect extends SourceEffect {
   apply(args: SourceEffectApplyArgs): ApplyGainReturn {
     const { start, duration, cycleIndex, chordIndex } = args;
 
+    if (this._lfo && !this._lfo.paused && chordIndex === 0)
+      this._lfo.stop(start);
+
     const envGain = new GainNode(this._drome.ctx, {
       gain: this._env!.maxValue,
     });

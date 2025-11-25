@@ -2,7 +2,7 @@ import DromeArray from "./drome-array";
 import DromeAudioNode from "./drome-audio-node";
 import Envelope from "./envelope";
 import LFO from "./lfo";
-import { isEnvTuple, isLfoTuple, isNullish } from "../utils/validators";
+import { isNullish } from "../utils/validators";
 import { applySteppedRamp } from "../utils/stepped-ramp";
 import type { Note } from "../types";
 
@@ -15,19 +15,19 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
   protected _lfo: LFO | undefined;
   protected _env: Envelope | undefined;
 
-  constructor(cycles: (number | number[])[] | [LFO] | [Envelope]) {
+  constructor(input: (number | number[])[] | LFO | Envelope) {
     super();
 
-    if (isLfoTuple(cycles)) {
-      this._defaultValue = cycles[0].value;
+    if (input instanceof LFO) {
+      this._defaultValue = input.value;
       this._cycles = new DromeArray([[this._defaultValue]]);
-      this._lfo = cycles[0];
-    } else if (isEnvTuple(cycles)) {
-      this._defaultValue = cycles[0].startValue;
+      this._lfo = input;
+    } else if (input instanceof Envelope) {
+      this._defaultValue = input.startValue;
       this._cycles = new DromeArray([[this._defaultValue]]);
-      this._env = cycles[0];
+      this._env = input;
     } else {
-      this._cycles = new DromeArray([[0]]).note(...cycles);
+      this._cycles = new DromeArray([[0]]).note(...input);
       this._defaultValue = this._cycles.at(0, 0);
     }
   }
@@ -38,8 +38,6 @@ abstract class AutomatableEffect<T extends AudioNode> extends DromeAudioNode {
     startTime: number,
     duration: number
   ) {
-    console.log(this._target, this._env);
-
     if (!this._target) return;
 
     if (this._lfo && !this._lfo.paused) this._lfo.stop(startTime);

@@ -1,3 +1,4 @@
+// TODO: Simplify/unify pattern/cycle/note/etc types
 // TODO: Revisit instrument cleanup method and generally tidy up
 
 import AutomatableEffect from "./effect-automatable";
@@ -13,7 +14,7 @@ import PanEffect from "./effect-pan";
 import LFO from "./lfo";
 import ReverbEffect from "./effect-reverb";
 import { DetuneSourceEffect, GainSourceEffect } from "./effect-source";
-import { isNullish } from "../utils/validators";
+import { isEnvTuple, isLfoTuple, isNullish } from "../utils/validators";
 import type Drome from "./drome";
 import type {
   AdsrMode,
@@ -31,9 +32,13 @@ interface InstrumentOptions<T> {
   adsr?: AdsrEnvelope;
 }
 
-type Pattern = (number | number[])[];
-type Cycle = Pattern | [LFO] | [Envelope];
-type CycleInput = number | LFO | Envelope | string;
+type SteppableInput = number | string;
+type Steppable = (number | number[])[];
+type AutomatableInput = SteppableInput | LFO | Envelope;
+type Automatable = Steppable | [LFO] | [Envelope];
+
+type StepPatternInput = number | string;
+type StepPattern = (number | number[])[];
 
 abstract class Instrument<T> {
   protected _drome: Drome;
@@ -49,7 +54,7 @@ abstract class Instrument<T> {
   protected readonly _gainNodes: Set<GainNode>;
 
   // Method Aliases
-  amp: (a: number | number[] | LFO, ...v: (number | number[])[]) => this;
+  amp: (...v: Automatable) => this;
   env: (a: number, d?: number, s?: number, r?: number) => this;
   envMode: (mode: AdsrMode) => this;
   rev: () => this;
@@ -140,12 +145,12 @@ abstract class Instrument<T> {
     return this;
   }
 
-  amplitude(a: number | number[] | LFO, ...v: (number | number[])[]) {
-    if (a instanceof LFO) {
-      this._gain.cycles.note(a.value);
-      this._gain.lfo = a;
-    } else {
-      this._gain.cycles.note(a, ...v);
+  amplitude(...v: Automatable) {
+    if (isLfoTuple(v)) {
+      this._gain.cycles.note(v[0].value);
+      this._gain.lfo = v[0];
+    } else if (!isEnvTuple(v)) {
+      this._gain.cycles.note(...v);
     }
     return this;
   }
@@ -185,7 +190,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  gain(...gain: (number | number[])[] | [LFO] | [Envelope]) {
+  gain(...gain: Automatable) {
     const effect = new GainEffect(this.ctx, { gain });
 
     this._signalChain.add(effect);
@@ -193,7 +198,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  bpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
+  bpf(...frequency: Automatable) {
     const f = new DromeFilter(this.ctx, { type: "bandpass", frequency });
 
     this._signalChain.add(f);
@@ -210,7 +215,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  hpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
+  hpf(...frequency: Automatable) {
     const f = new DromeFilter(this.ctx, { type: "highpass", frequency });
 
     this._signalChain.add(f);
@@ -227,7 +232,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  lpf(...frequency: (number | number[])[] | [LFO] | [Envelope]) {
+  lpf(...frequency: Automatable) {
     const f = new DromeFilter(this.ctx, { type: "lowpass", frequency });
 
     this._signalChain.add(f);
@@ -244,21 +249,23 @@ abstract class Instrument<T> {
     return this;
   }
 
-  detune(a: number | number[] | LFO | Envelope, ...v: (number | number[])[]) {
-    if (a instanceof LFO) {
-      this._detune.cycles.note(a.value);
-      this._detune.lfo = a;
-    } else if (a instanceof Envelope) {
-      this._detune.env = a;
+  detune(...v: Automatable) {
+    if (isLfoTuple(v)) {
+      this._detune.cycles.note(v[0].value);
+      this._detune.lfo = v[0];
+    } else if (isEnvTuple(v)) {
+      this._detune.env = v[0];
     } else {
-      this._detune.cycles.note(a, ...v);
+      this._detune.cycles.note(...v);
     }
 
     return this;
   }
 
-  pan(...pan: (number | number[])[] | [LFO] | [Envelope]) {
-    const effect = new PanEffect(this.ctx, { pan });
+  pan(...input: Automatable) {
+    const effect = new PanEffect(this.ctx, {
+      pan: isEnvTuple(input) || isLfoTuple(input) ? input[0] : input,
+    });
 
     this._signalChain.add(effect);
 
@@ -268,9 +275,9 @@ abstract class Instrument<T> {
   // b either represents decay/room size or a url/sample name
   // c either represents the lpf start value or a sample bank name
   // d is the lpf end value
-  reverb(a: CycleInput, b?: number, c?: number, d?: number): this;
-  reverb(a: CycleInput, b?: string, c?: string): this;
-  reverb(mix: CycleInput, b: unknown = 1, c: unknown = 1600, d?: number) {
+  reverb(a: AutomatableInput, b?: number, c?: number, d?: number): this;
+  reverb(a: AutomatableInput, b?: string, c?: string): this;
+  reverb(mix: AutomatableInput, b: unknown = 1, c: unknown = 1600, d?: number) {
     let effect: ReverbEffect;
     const parsedMix = parseCycleInput(mix);
 
@@ -291,7 +298,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  delay(dt: number | string, feedback: number) {
+  delay(dt: SteppableInput, feedback: number) {
     const delayTime = parsePattern(dt);
     const effect = new DelayEffect(this._drome, { delayTime, feedback });
 
@@ -301,7 +308,7 @@ abstract class Instrument<T> {
   }
 
   distort(
-    amount: number | string | LFO | Envelope,
+    amount: AutomatableInput,
     postgain?: number,
     type?: DistortionAlgorithm
   ) {
@@ -315,7 +322,7 @@ abstract class Instrument<T> {
     return this;
   }
 
-  crush(bd: number | string | LFO | Envelope, rateReduction = 1) {
+  crush(bd: AutomatableInput, rateReduction = 1) {
     const bitDepth = parseCycleInput(bd);
     const effect = new BitcrusherEffect(this.ctx, {
       bitDepth,
@@ -326,10 +333,6 @@ abstract class Instrument<T> {
   }
 
   beforePlay(barStart: number, barDuration: number) {
-    // stop current lfos to make sure that lfo period stays synced with bpm
-    this._gain.lfo?.stop();
-    this._detune.lfo?.stop();
-
     this._startTime = barStart;
     const cycleIndex = this._drome.metronome.bar % this._cycles.length;
     const cycle = this._cycles.at(cycleIndex);
@@ -369,7 +372,7 @@ abstract class Instrument<T> {
 
       Array.from(this._audioNodes).forEach((node, i) => {
         if (i === 0) node.addEventListener("ended", handleEnded);
-        node.stop(stopTime + relTime);
+        node.stop(stopTime + relTime + 0.1);
       });
     }
   }
@@ -396,12 +399,12 @@ abstract class Instrument<T> {
 export default Instrument;
 export type { InstrumentOptions, InstrumentType };
 
-function parsePattern(input: number | string): Pattern {
+function parsePattern(input: number | string): Steppable {
   if (typeof input === "string") return parsePatternString(input);
   return [input];
 }
 
-function parseCycleInput(input: CycleInput): Cycle {
+function parseCycleInput(input: AutomatableInput): Automatable {
   if (input instanceof Envelope) return [input];
   else if (input instanceof LFO) return [input];
   else return parsePattern(input);
@@ -419,7 +422,7 @@ function parsePatternString(input: string) {
   }
 }
 
-function isPattern(input: unknown): input is Pattern {
+function isPattern(input: unknown): input is Steppable {
   return (
     Array.isArray(input) &&
     input.reduce<boolean>((_, x) => {

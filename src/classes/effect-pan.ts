@@ -3,7 +3,7 @@ import Envelope from "./envelope";
 import LFO from "./lfo";
 
 interface DromeFilterOptions {
-  pan: (number | number[])[] | [LFO] | [Envelope];
+  pan: (number | number[])[] | LFO | Envelope;
 }
 
 class PanEffect extends AutomatableEffect<StereoPannerNode> {

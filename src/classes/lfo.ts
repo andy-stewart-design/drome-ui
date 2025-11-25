@@ -39,13 +39,15 @@ class LFO {
     this._gain = new GainNode(this._ctx, { gain: this._depth });
     this._filter = new BiquadFilterNode(this._ctx, { frequency: 25 });
 
-    _gain?.gain.linearRampToValueAtTime(0, this._ctx.currentTime + 0.1);
-    _osc?.stop(this._ctx.currentTime + 0.1);
+    _gain?.gain.linearRampToValueAtTime(0, this._ctx.currentTime + 0.005);
+    _osc?.stop(this._ctx.currentTime + 0.005);
     const cleanup = () => {
-      _osc?.disconnect();
-      _gain?.disconnect();
-      _filter?.disconnect();
-      _osc?.removeEventListener("ended", cleanup);
+      setTimeout(() => {
+        _osc?.disconnect();
+        _gain?.disconnect();
+        _filter?.disconnect();
+        _osc?.removeEventListener("ended", cleanup);
+      }, 10);
     };
     _osc?.addEventListener("ended", cleanup);
 
