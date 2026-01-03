@@ -1,7 +1,7 @@
 # TODOS
 
+[x] Move repo to drome-live
 [ ] Revisit instrument cleanup method and generally tidy up
-[ ] Move repo to drome-live
 [ ] Reintegrate pattern methods
 [ ] Reintegrate randomness
 [ ] Midi input

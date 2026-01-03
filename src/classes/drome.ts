@@ -110,7 +110,7 @@ class Drome {
 
   stop() {
     this.clock.stop();
-    this.instruments.forEach((inst) => inst.stop());
+    this.instruments.forEach((inst) => inst.stop(this.ctx.currentTime));
     // this.clearReplListeners();
     this.audioChannels.forEach((chan) => {
       chan.gain.cancelScheduledValues(this.ctx.currentTime);

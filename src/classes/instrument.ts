@@ -1,5 +1,3 @@
-// TODO: Revisit instrument cleanup method and generally tidy up
-
 import AutomatableEffect from "./effect-automatable";
 import BitcrusherEffect from "./effect-bitcrusher";
 import DelayEffect from "./effect-delay";
@@ -364,9 +362,8 @@ abstract class Instrument<T> {
     return notes;
   }
 
-  stop(when?: number) {
+  stop(stopTime: number) {
     const startTime = this._startTime ?? this.ctx.currentTime;
-    const stopTime = when ?? this.ctx.currentTime;
     const relTime = 0.25;
 
     if (startTime > this.ctx.currentTime) {
